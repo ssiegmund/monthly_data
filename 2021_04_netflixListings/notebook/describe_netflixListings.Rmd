@@ -1,0 +1,1360 @@
+---
+title: "eda for netflixListings data - describe and visualize"
+output: html_notebook
+---
+
+purpose of notebook:
+  (-) explore netflix listings data to gain understanding of data set -> describe & visualize
+  (-) find stories in the data to pursue
+  
+todo:
+  (/) take over ideas from cleaning notebook
+  (/) describe & visualize single variables (univariate)
+  (/) describe & visualize relationship between variables (multivariate)
+    (/) add correlation in multivar section
+  (/) get inspiration for eda from rtatman, Statistik Buch, r4ds, field guide, observable gallery (like plots) -> also link to one note for future reference
+    (/) is there use for density plots?
+  (-) gather interesting observations for further investigation
+  (-) gather possible new features for extraction
+  
+observations:
+  (!) possible feature extraction: 
+        - one hot encoding for lists in: country, listed_in 
+        (x) prepare description with NLP sentiment analysis 
+        - prepare network analysis with cast and director
+        - prepare increase of number over all, types, countries, rating, listed_in; usage of cast or director,  .. over time 
+
+stories:
+  (!) description with NLP sentiment analysis
+  (!) network analysis with cast and director
+  (!) increase of number over all, types, countries, rating, listed_in; usage of cast or director,  .. over time 
+
+prerequisites for this notebook:
+  (i) run data cleaning notebook first to load in the data in R workspace 
+      (better would be save pre-processed csv after clean nb and then load this csv here again)
+
+---
+load packages
+```{r}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+library(lubridate) # date 
+
+library(tidytext) # tidy text analysis
+library(stopwords) # lib of stopwords
+library(glue) # for pasting strings
+library(data.table) # for rbindlist, a faster version of rbind
+
+library(igraph) # tools for network analysis
+library(corrplot) # correlation plots
+```
+
+overview of netflix listings data
+```{r}
+head(netflix)
+```
+
+```{r}
+head(netflix_raw)
+```
+
+---
+univariate section
+---
+
+visualize type column with barplot
+```{r}
+type_plot <- ggplot(netflix, aes(x = type)) +
+  geom_bar() +
+  ggtitle("type of netflix listing overall") +
+  theme_minimal()
+
+ggplotly(type_plot)
+```
+
+visualize director column with (kind of) bar chart, after making one big column out of all the list
+```{r}
+director_bigList <- netflix %>%
+  select(director) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  add_count(director, sort = TRUE)
+  # drop_na() %>%
+  # group_by(director) %>%
+  # mutate(n = n()) %>%
+  # ungroup() %>%
+  # # table() %>% # count occurrences of directors
+  # # as_tibble() %>% # convert to data frame
+  # # rename(.,director = .) %>%
+  # arrange(-n)
+
+director_plot <- ggplot(director_bigList, aes(x = fct_infreq(director), y = n)) +
+    geom_point() +
+    ggtitle("directors of the netflix titles") +
+    theme_minimal() 
+
+director_bigList2 <- netflix %>%
+  select(director) %>%
+  unnest_longer(director) %>%
+  drop_na() 
+
+director_bar <- ggplot(director_bigList2, aes(x = fct_infreq(director))) +
+    geom_bar() +
+    ggtitle("directors of the netflix titles") 
+
+head(director_bigList)
+ggplotly(director_plot)
+ggplotly(director_bar)
+summary(director_bigList)
+```
+
+visualize cast column with (kind of) bar chart, after making one big column out of all the list (might take a while to show plot with plotly)
+```{r}
+cast_bigList <- netflix %>%
+  select(cast) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  add_count(cast, sort = TRUE)
+  # group_by(cast) %>%
+  # mutate(n = n()) %>%
+  # ungroup() %>%
+  # # table() %>%
+  # # as_tibble() %>%
+  # # rename(.,cast = .) %>%
+  # arrange(-n)
+
+cast_plot <- ggplot(cast_bigList, aes(x = fct_infreq(cast), y = n)) +
+    geom_point() +
+    ggtitle("actors in the netflix titles") +
+    theme_minimal()
+
+cast_bigList2 <- netflix %>%
+  select(cast) %>%
+  unnest_longer(cast) %>%
+  drop_na() 
+
+cast_bar <- ggplot(cast_bigList2, aes(x = fct_infreq(cast))) +
+    geom_bar() +
+    ggtitle("directors of the netflix titles") 
+
+head(cast_bigList)
+cast_plot
+cast_bar
+summary(cast_bigList)
+```
+
+visualize country column with (kind of) bar chart, after making one big column out of all the list
+```{r}
+country_bigList <- netflix %>%
+  select(country) %>%
+  unnest_longer(country) %>%
+  drop_na() %>%
+  add_count(country, sort = TRUE)
+  # group_by(country) %>%
+  # mutate(n = n()) %>%
+  # ungroup() %>%
+  # # table() %>%
+  # # as_tibble() %>%
+  # # rename(.,country = .) %>%
+  # arrange(-n)
+
+country_plot <- ggplot(country_bigList, aes(x = fct_infreq(country), y = n)) +
+    geom_point() +
+    ggtitle("production country of the netflix titles") +
+    theme_minimal()
+
+netflix_longCountry <- netflix %>% unnest_longer(country) # shorter alternative with geom_bar
+country_bar <- ggplot(netflix_longCountry, aes(x = fct_infreq(country))) +
+  geom_bar() +
+  theme_minimal()
+
+head(country_bigList)
+ggplotly(country_plot)
+ggplotly(country_bar)
+summary(country_bigList)
+```
+
+visualize date added column as point plot with count over date, but only on a monthly scale (not daily as in data set)
+```{r}
+date_added_count <- netflix %>%
+  mutate(date_floor = floor_date(date_added, 'month'))  %>%
+  select(date_floor) %>%
+  count(date_floor, sort = TRUE)
+  # group_by(date_floor) %>%
+  # mutate(n = n()) %>%
+  # ungroup() %>%
+  # table() %>%
+  # as_tibble() %>%
+  # rename(.,date_floor = .) %>%
+  # mutate(date_floor = ymd(date_floor)) %>%
+  # distinct() %>% # required to not influence geom_smooth with the same points multiple times
+  # arrange(-n)   
+
+date_added_plot <- ggplot(date_added_count, aes(x = date_floor, y = n)) +
+  geom_point() +
+  ggtitle("date of titles added of netflix listing overall") +
+  theme_minimal() +
+  geom_smooth()
+
+head(date_added_count)
+ggplotly(date_added_plot)
+summary(date_added_count)
+```
+```{r}
+date_bar <- netflix %>%
+  select(date_added) %>%
+  mutate(date_month = month(date_added)) %>% # extract month from date as int
+  mutate(date_year = year(date_added)) %>% # extract year from date as int
+  mutate(date_day = day(date_added)) %>%
+  select(-date_added) %>% 
+  gather("group", "date")
+  
+date_bar_plot <- ggplot(date_bar, aes(x = date)) +
+  geom_bar() +
+  facet_grid(col = vars(group), scales = "free")
+
+ggplotly(date_bar_plot)
+head(date_bar)
+```
+
+visualize release year column
+```{r}
+release_year_count <- netflix %>%
+  select(release_year) %>%
+  count(release_year) %>%
+  # group_by(release_year) %>%
+  # mutate(n = n()) %>%
+  # ungroup() %>%
+  # distinct() %>%
+  # table() %>%
+  # as_tibble() %>%
+  # rename(.,release_year = .) %>%
+  # mutate(release_year = type.convert(release_year)) %>%
+  complete(release_year, fill = list(n = 0)) %>%
+  arrange(-n)
+
+release_year_plot <- ggplot(release_year_count, aes(x = release_year, y = n)) +
+  geom_point() +
+  ggtitle("release year of netflix listing overall") +
+  theme_minimal()
+
+# shorter alternative with geom_bar
+release_bar <- ggplot(netflix, aes(x = release_year)) +
+  geom_bar() +
+  theme_minimal()
+
+head(release_year_count)
+ggplotly(release_year_plot)
+ggplotly(release_bar)
+summary(release_year_count)
+```
+
+visualize rating column as bar chart since it is categorical with one entry per cell
+```{r}
+rating_plot <- ggplot(netflix, aes(x = fct_infreq(rating))) +
+  geom_bar() +
+  ggtitle("rating of netflix listing overall") +
+  theme_minimal()
+
+ggplotly(rating_plot)
+```
+
+visualize duration column as two histograms separated for tv show / movie
+```{r}
+duration_plot <- ggplot(netflix, aes(x = duration, group = type)) +
+  geom_histogram(bins = 16) +
+  ggtitle("duration of netflix titles overall") +
+  theme_minimal() +
+  facet_grid(cols = vars(type), scales = "free")
+
+duration_box <- ggplot(netflix, aes(y = duration, x = type)) +
+  geom_boxplot() +
+  geom_jitter(alpha = 0.05) +
+  ggtitle("duration of netflix titles overall") +
+  theme_minimal() 
+
+ggplotly(duration_plot)
+ggplotly(duration_box)
+```
+
+visualize listed_in column for as count of each genre (where some titles will have more than one and some non)
+```{r}
+listed_in_bigList <- netflix %>%
+  select(listed_in) %>%
+  unnest_longer(listed_in) %>%
+  add_count(listed_in)
+  # group_by(listed_in) %>%
+  # mutate(n = n()) %>%
+  # ungroup() %>%
+  # drop_na() %>%
+  # table() %>%
+  # as_tibble() %>%
+  # rename(.,listed_in = .) %>%
+  # arrange(-n)
+
+listed_in_plot <- ggplot(listed_in_bigList, aes(x = fct_infreq(listed_in), y = n)) +
+    geom_point() +
+    ggtitle("genres of the netflix titles") +
+    theme_minimal()
+
+listed_in_bar <- ggplot(netflix%>%unnest_longer(listed_in), aes(x = fct_infreq(listed_in))) +
+  geom_bar() +
+  ggtitle("rating of netflix listing overall") +
+  theme_minimal()
+
+ggplotly(listed_in_bar)
+head(listed_in_bigList)
+ggplotly(listed_in_plot)
+summary(listed_in_bigList)
+```
+
+visualize description column for most used words (wo stopwords) -> add column with tokens from description with count
+```{r}
+description_list <- netflix %>%
+  select(description) %>%
+  unnest_tokens(word, description) %>%
+  anti_join(get_stopwords()) %>%
+  count(word, sort = T)
+
+description_plot <- ggplot(description_list, aes(x = word, y = n)) +
+    geom_point() +
+    ggtitle("most used words in title descriptions, overall") +
+    theme_minimal()
+  
+summary(description_list)
+(ggplot(description_list, aes(n)) + geom_histogram()) %>% ggplotly()
+description_plot
+head(description_list, 10)
+```
+
+analyze word and document frequency: tf-idf -> might be to short descriptions to work properly, some have just a sentence 
+https://www.tidytextmining.com/tfidf.html
+```{r}
+description_list2 <- netflix %>%
+  select(description, show_id) %>%
+  unnest_tokens(word, description) %>%
+  anti_join(get_stopwords()) %>%
+  count(show_id, word, sort=T)
+
+total_description <- description_list2 %>%
+  group_by(show_id) %>%
+  summarize(total = sum(n))
+
+description_list2 <- left_join(description_list2, total_description)
+
+description_tf_idf <- description_list2 %>%
+  bind_tf_idf(word, show_id, n) %>%
+  arrange(desc(tf_idf)) %>%
+  group_by(show_id) %>%
+  slice_max(tf_idf, n = 1) %>%
+  ungroup() 
+
+titles <- netflix %>% select(show_id, title)
+description_tf_idf <- left_join(description_tf_idf, titles)
+
+tf_idf_plot <- ggplot(description_tf_idf, aes(y = tf_idf, x = title, text = word)) +
+  geom_point() +
+  ggtitle("important words in title descriptions (tf-idf)") +
+  theme_void()
+
+ggplotly(tf_idf_plot)
+head(description_tf_idf, 50)
+```
+
+
+---
+multivariate section
+---
+
+reminder of variables
+```{r}
+head(netflix)
+```
+
+type over date_added (time)
+```{r}
+# try simple point plot since two dimensions -> it is too crowded, even with jitter and alpha
+type_over_date_plot <- netflix %>%
+  select(type, date_added) %>%
+  ggplot(aes(x = date_added, y = type)) +
+    geom_point(alpha = 0.15) +
+    geom_jitter(alpha = 0.15) +
+    theme_minimal()
+
+# density plot of date_added, note that density is normalized
+type_over_date_density <- netflix %>%
+  select(type, date_added) %>%
+  ggplot(aes(x = date_added, col = type, fill = type)) +
+    geom_density(alpha = 0.2) +
+    theme_minimal()
+
+# summarise date_added as count of titles added per month grouped by type
+type_over_date_count <- netflix %>%
+  mutate(date_floor = floor_date(date_added, 'month'))  %>%
+  select(type, date_floor) %>%
+  # table() %>%
+  # as_tibble() %>%
+  # mutate(date_floor = ymd(date_floor))
+  count(type, date_floor) %>%
+  complete(type, date_floor, fill = list(n = 0))
+
+type_over_date_count_plot <- ggplot(type_over_date_count, aes(x = date_floor, y = n, group = type, col = type)) +
+  geom_point() +
+  ggtitle("count of titles added of netflix listing by type") +
+  theme_minimal() +
+  # facet_grid(rows = vars(type)) +
+  geom_smooth()
+
+head(type_over_date_count)
+ggplotly(type_over_date_plot)
+ggplotly(type_over_date_density)
+ggplotly(type_over_date_count_plot)
+summary(type_over_date_count)
+```
+```{r}
+# calculate ratio of added titles per type per month as TV Show/(TV Show + Movie)
+type_over_date_ratio <- type_over_date_count  %>%
+  group_by(date_floor) %>% 
+  summarise(ratio = n[type=="TV Show"]/(n[type=="Movie"]+n[type=="TV Show"])) 
+
+type_over_date_ratio_plot <- ggplot(type_over_date_ratio, aes(x = date_floor, y = ratio)) +
+  geom_point() +
+  theme_minimal() + 
+  ggtitle("ratio of TV Shows to total added titles") +
+  geom_smooth() # to see an averaged version (loess method)
+
+ggplotly(type_over_date_ratio_plot)
+head(type_over_date_ratio)
+summary(type_over_date_ratio)
+
+# only look at the last years since 2015?/2016 since it seems to be more stable, use linear regression to see trend
+# 2015 -> decrease, 2016 -> constant, 2017+ -> increase in TV Shows
+type_over_date_ratio <- type_over_date_count  %>%
+  group_by(date_floor) %>% 
+  summarise(ratio = n[type=="TV Show"]/(n[type=="Movie"]+n[type=="TV Show"])) %>%
+  filter(date_floor > as.Date("2017-01-01") & date_floor < as.Date("2021-01-01"))
+
+type_over_date_ratio_plot <- ggplot(type_over_date_ratio, aes(x = date_floor, y = ratio)) +
+  geom_point() +
+  theme_minimal() + 
+  ggtitle("ratio of TV Shows to total added titles") +
+  geom_smooth(method = "lm") # use linear regression to see trend
+
+ggplotly(type_over_date_ratio_plot)
+```
+
+type grouped by director (beware of NAs)
+```{r}
+# type count per director 
+type_per_director <- netflix %>%
+  select(type, director) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  add_count(director, type, sort = TRUE)
+  # table() %>%
+  # as_tibble()
+
+type_per_director_plot <- ggplot(type_per_director, aes(x = fct_infreq(director), y = n, colour = type)) +
+  geom_point() +
+  ggtitle("directors of the netflix titles colored by type")
+
+type_over_director_bar <- netflix %>%
+  select(type, director) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  ggplot(aes(x = fct_infreq(director), col = type)) +
+    geom_bar() +
+    ggtitle("directors of the netflix titles colored by type")
+
+head(type_per_director)
+ggplotly(type_per_director_plot)
+ggplotly(type_over_director_bar)
+summary(type_per_director)
+```
+
+```{r}
+# ration of type by director
+type_per_director_ratio <- netflix %>%
+  select(type, director) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  table() %>%
+  as_tibble() %>%
+  group_by(director) %>% 
+  summarise(ratio = n[type=="Movie"]/(n[type=="Movie"]+n[type=="TV Show"])) 
+
+type_per_director_ratio_plot <- ggplot(type_per_director_ratio, aes(x = director, y = ratio)) +
+  geom_point() +
+  ggtitle("percentage of Movies over TV Shows per director")
+
+director_by_type_ratio_plot <- ggplot(type_per_director_ratio, aes(x = ratio)) +
+  geom_histogram(bins=5) +
+  theme_minimal() +
+  ggtitle("percentage of Movies over TV Shows per director")
+
+head(type_per_director_ratio)
+ggplotly(type_per_director_ratio_plot)
+ggplotly(director_by_type_ratio_plot)
+summary(type_per_director_ratio)
+```
+
+```{r}
+# visualize na from director column per type
+director_na <- netflix %>%
+  select(type, director) %>%
+  mutate(director_na = is.na(director)) %>% # check if each cell is na
+  as_tibble # convert to data frame
+  
+director_na_plot <- ggplot(director_na, aes(x = type, fill = director_na)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("ratio of NA in director column per type")
+    
+ggplotly(director_na_plot)
+head(director_na)
+# most TV Shows have NA in director column, what essentially makes aboves oberservation useless
+```
+ 
+type grouped by cast (beware of NAs)
+```{r}
+# type count per actor (unlisted cast) 
+type_per_cast <- netflix %>%
+  select(type, cast) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  add_count(cast, type, sort = TRUE)
+  # table() %>%
+  # as_tibble()
+
+type_per_cast_plot <- ggplot(type_per_cast, aes(x = fct_infreq(cast), y = n, colour = type)) +
+  geom_point(alpha=0.25) +
+  ggtitle("actors (cast) of the netflix titles colored by type")
+
+type_over_cast_bar <- netflix %>%
+  select(type, cast) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  ggplot(aes(x = fct_infreq(cast), col = type)) +
+    geom_bar() +
+    ggtitle("actors (cast) of the netflix titles colored by type")
+
+type_over_cast_bar
+type_per_cast_plot
+head(type_per_cast)
+summary(type_per_cast)
+```
+
+```{r}
+# ration of type by cast
+type_per_cast_ratio <- netflix %>%
+  select(type, cast) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  table() %>%
+  as_tibble() %>%
+  group_by(cast) %>% 
+  summarise(ratio = n[type=="Movie"]/(n[type=="Movie"]+n[type=="TV Show"])) 
+
+type_per_cast_ratio_plot <- ggplot(type_per_cast_ratio, aes(x = cast, y = ratio)) +
+  geom_point() +
+  ggtitle("percentage of Movies over TV Shows per actor (cast)")
+
+cast_by_type_ratio_plot <- ggplot(type_per_cast_ratio, aes(x = ratio)) +
+  geom_histogram(bins=7) +
+  theme_minimal() +
+  ggtitle("count of actors (cast) grouped by type ")
+
+type_per_cast_ratio_plot
+ggplotly(cast_by_type_ratio_plot)
+head(type_per_cast_ratio)
+summary(type_per_cast_ratio)
+```
+
+```{r}
+# visualize na from cast column per type
+cast_na <- netflix %>%
+  select(type, cast) %>%
+  mutate(cast_na = is.na(cast)) %>% # check if each cell is na
+  as_tibble # convert to data frame
+  
+cast_na_plot <- ggplot(cast_na, aes(x = type, fill = cast_na)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("ratio of NA in cast column per type")
+    
+ggplotly(cast_na_plot)
+head(cast_na)
+# most TV Shows have NA in director column, what essentially makes aboves oberservation useless
+```
+
+type grouped by country (beware of NAs)
+```{r}
+# type count per country 
+type_per_country <- netflix %>%
+  select(type, country) %>%
+  unnest_longer(country) %>%
+  drop_na() %>%
+  add_count(country, type, sort = TRUE)
+  # table() %>%
+  # as_tibble()
+
+type_per_country_plot <- ggplot(type_per_country, aes(x = fct_infreq(country), y = n, colour = type)) +
+  geom_point() +
+  ggtitle("production country of the netflix titles colored by type")
+
+type_over_country_bar <- netflix %>%
+  select(type, country) %>%
+  unnest_longer(country) %>%
+  ggplot(aes(fct_infreq(country), fill = type)) +
+    geom_bar() +
+    ggtitle("production country of the netflix titles colored by type") 
+
+head(type_per_country)
+ggplotly(type_over_country_bar)
+ggplotly(type_per_country_plot)
+summary(type_per_country)
+```
+
+```{r}
+# ration of type by country
+type_per_country_ratio <- netflix %>%
+  select(type, country) %>%
+  unnest_longer(country) %>%
+  drop_na() %>%
+  table() %>%
+  as_tibble() %>%
+  group_by(country) %>% 
+  summarise(ratio = n[type=="Movie"]/(n[type=="Movie"]+n[type=="TV Show"])) 
+
+type_per_country_ratio_plot <- ggplot(type_per_country_ratio, aes(x = country, y = ratio)) +
+  geom_point() +
+  ggtitle("percentage of Movies over TV Shows per producion country")
+
+country_by_type_ratio_plot <- ggplot(type_per_country_ratio, aes(x = ratio)) +
+  geom_histogram(bins=7) +
+  theme_minimal() +
+  ggtitle("count of production country grouped by type ")
+
+head(type_per_country_ratio)
+ggplotly(type_per_country_ratio_plot)
+ggplotly(country_by_type_ratio_plot)
+summary(type_per_country_ratio)
+```
+
+```{r}
+# visualize na from country column per type
+country_na <- netflix %>%
+  select(type, country) %>%
+  mutate(country_na = is.na(country)) %>% # check if each cell is na
+  as_tibble # convert to data frame
+  
+country_na_plot <- ggplot(country_na, aes(x = type, fill = country_na)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("ratio of NA in country column per type")
+    
+ggplotly(country_na_plot)
+head(country_na)
+```
+
+rating grouped by type
+```{r}
+rating_over_type_plot <- ggplot(netflix, aes(x = fct_infreq(rating), y = type)) +
+  geom_point() + 
+  geom_jitter(alpha = 0.25) + 
+  theme_minimal() +
+  ggtitle("rating grouped by type")
+
+rating_by_type_plot <- ggplot(netflix, aes(x = fct_infreq(rating))) +
+  geom_bar() +
+  ggtitle("rating of netflix listing by type") +
+  theme_minimal() +
+  facet_grid(rows = vars(type))
+
+ggplotly(rating_over_type_plot)
+ggplotly(rating_by_type_plot)
+```
+
+listed_in over / grouped by type
+```{r}
+# type count per genre (unlisted listed_in) 
+listed_in_per_type <- netflix %>%
+  select(type, listed_in) %>%
+  unnest_longer(listed_in) %>%
+  drop_na() %>%
+  add_count(listed_in, type, sort = TRUE)
+  # table() %>%
+  # as_tibble()
+
+listed_in_per_type_plot <- ggplot(listed_in_per_type, aes(x = fct_infreq(listed_in), y = n, colour = type)) +
+  geom_point(alpha=0.8) +
+  ggtitle("genre (listed_in) of the netflix titles colored by type")
+
+listed_in_by_type_bar <- ggplot(netflix %>% unnest_longer(listed_in), aes(x = fct_infreq(listed_in))) +
+  geom_bar() +
+  ggtitle("genre (listed_in) of the netflix titles colored by type") +
+  theme_minimal() +
+  facet_grid(rows = vars(type))
+
+ggplotly(listed_in_per_type_plot)
+ggplotly(listed_in_by_type_bar)
+head(listed_in_per_type)
+summary(listed_in_per_type)
+```
+```{r}
+# ration of listed_in by type
+listed_in_per_type_ratio <- netflix %>%
+  select(type, listed_in) %>%
+  unnest_longer(listed_in) %>%
+  drop_na() %>%
+  table() %>%
+  as_tibble() %>%
+  group_by(listed_in) %>% 
+  summarise(ratio = n[type=="Movie"]/(n[type=="Movie"]+n[type=="TV Show"])) 
+
+listed_in_per_type_ratio_plot <- ggplot(listed_in_per_type_ratio, aes(x = listed_in, y = ratio)) +
+  geom_point() +
+  ggtitle("percentage of Movies(1) over TV Shows(0) per genre")
+
+listed_in_ratio_plot <- ggplot(listed_in_per_type_ratio, aes(x = ratio)) +
+  geom_histogram(bins=7) +
+  theme_minimal() +
+  ggtitle("count of production genre grouped by type ")
+
+ggplotly(listed_in_per_type_ratio_plot)
+ggplotly(listed_in_ratio_plot)
+head(listed_in_per_type_ratio)
+summary(listed_in_per_type_ratio)
+```
+
+director to cast directed network but only for movies, colored by country
+```{r}
+cast_vertices_cast <- netflix %>%
+  select(cast, country) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  unnest_longer(cast) %>%
+  drop_na(cast) %>%
+  table() %>% # better count(country, cast, sort = TRUE)
+  as_tibble() %>% # ...
+  arrange(-n) %>% # ...
+  distinct(cast, .keep_all = TRUE)  %>% 
+  rename(vertex = cast)
+
+cast_vertices_director <- netflix %>%
+  select(director, country) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  unnest_longer(director) %>%
+  drop_na(director) %>%
+  table() %>% # better count(country, director, sort = TRUE)
+  as_tibble() %>% # ...
+  arrange(-n) %>% # ...
+  distinct(director, .keep_all = TRUE) %>%
+  rename(vertex = director)
+
+cast_vertices <- bind_rows(cast_vertices_cast, cast_vertices_director) %>%
+    distinct(vertex, .keep_all = TRUE) 
+
+cast_edges <- netflix %>%
+  filter(type == "Movie") %>%
+  # filter(country == "India") %>%
+  select(cast, director) %>%
+  mutate(director = unlist(map(director, 1))) %>%
+  unnest_longer(cast) %>%
+  drop_na() # %>%
+  # as.matrix()
+
+cast_network <- graph_from_data_frame(d=cast_edges, vertices = cast_vertices, directed = F)
+# cast_network <- graph_from_edgelist(el=cast_edges, directed = T)
+
+V(cast_network)$color <- ifelse(V(cast_network)$country == "United States", "blue",
+                         ifelse(V(cast_network)$country == "India","green",
+                         ifelse(V(cast_network)$country == "United Kingdom","purple",
+                         ifelse(V(cast_network)$country == "France","yellow",
+                         ifelse(V(cast_network)$country == "Japan","red",
+                                "grey")))))
+
+# plot(simplify(cast_network), vertex.size= 0.01,edge.arrow.size=0.001,vertex.label.cex = 0.75,vertex.frame.color = adjustcolor("white", alpha.f = 0),edge.color=adjustcolor(1, alpha.f = 0.15),display.isolates=FALSE,vertex.label=ifelse(page_rank(cast_network)$vector > 0.1 , cast_vertices, NA), remove.multiple = TRUE, remove.loops = TRUE, edge.attr.comb = igraph_opt("edge.attr.comb"))
+
+dim(cast_edges)
+head(cast_edges)
+```
+
+director grouped by /over country, with color indicating if they work in multiple countries (first of list)
+```{r}
+country_over_director <- netflix %>%
+  select(director, country) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  distinct() %>%
+  mutate(duplicated = (duplicated(director) | duplicated(director, fromLast = TRUE)))
+
+country_over_director_plot <- ggplot(country_over_director, aes(x = fct_infreq(director), y = fct_infreq(country), color = duplicated)) +
+  geom_point() +
+  # geom_jitter() +
+  theme_minimal() +
+  ggtitle("directors over country, colored if they produced in multiple countries")
+
+country_over_director_bar <- ggplot(country_over_director, aes(x=duplicated)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("count of directors producing in more than one country (first entry of lists)")
+
+ggplotly(country_over_director_bar)
+ggplotly(country_over_director_plot)
+head(country_over_director)
+summary(country_over_director)
+```
+
+ratio of directors working in more than one country, grouped by country
+```{r}
+country_over_director_ratio <- country_over_director %>%
+  group_by(country) %>%
+  summarise(ratio = sum(duplicated == TRUE) / n())
+
+country_over_director_ratio_plot <- ggplot(country_over_director_ratio, aes(x = country, y = ratio)) +
+  geom_point() +
+  theme_minimal() +
+  ggtitle("ratio of directors working in more than one country over directors")
+
+country_over_director_ratio_bar <- ggplot(country_over_director, aes(x = fct_infreq(country), fill = duplicated)) +
+  geom_bar(stat="count") +
+  theme_minimal() +
+  ggtitle("count of directors ")
+
+ggplotly(country_over_director_ratio_bar)
+ggplotly(country_over_director_ratio_plot)
+summary(country_over_director_ratio)
+head(country_over_director_ratio)
+```
+
+director occurrences over release_year
+```{r}
+director_over_release <- netflix %>%
+  select(director, release_year) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  ggplot(aes(x = release_year, y = fct_infreq(director))) +
+    geom_point(alpha = 0.25) +
+    geom_line(alpha = 0.15) +
+    theme_void() +
+    ggtitle("director occurences over release_year")
+
+ggplotly(director_over_release)
+summary(director_over_release)
+```
+
+director grouped by / over rating, only for Movies
+```{r}
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+lvl=unique(c(as.character(netflix$rating))) 
+
+director_over_rating <- netflix %>%
+  filter(type == "Movie") %>%
+  select(director, rating) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  group_by(rating) %>% # better add_count(rating)
+  mutate(n = n()) %>%
+  ungroup() %>% # always ungroup after calculations, to prevent future data management to likely produce errors
+  mutate(rating_fac = factor(rating, levels=lvl)) # use factor as numeric to plot the vertical lines # actually not required, vertical lines with group in aes and fct_infreq works on the fly
+  
+director_over_rating_plot <- ggplot(director_over_rating, aes(y = fct_infreq(rating_fac), x = fct_infreq(director), group = director)) +
+    geom_point(alpha = 0.25) +
+    geom_line(alpha = 0.15) +
+    theme_minimal() +
+    ggtitle("director over rating, only Movies")
+
+
+ggplotly(director_over_rating_plot)
+head(director_over_rating)
+print(lvl)
+```
+
+director grouped by / over duration, only for Movies
+```{r}
+director_over_duration <- netflix %>%
+  filter(type == "Movie") %>%
+  select(director, duration) %>%
+  unnest_longer(director) %>%
+  drop_na()
+    
+director_over_duration_plot <- ggplot(director_over_duration, aes(x = fct_infreq(director), y = duration, group = director)) +
+  geom_point(alpha = 0.25) +
+  geom_line(alpha = 0.15) +
+  ggtitle("duration of netflix titles over directors, only Movies") +
+  theme_minimal() 
+
+director_over_duration_box <- ggplot(director_over_duration, aes(x = fct_infreq(director), y = duration, group = director)) +
+  geom_boxplot() +
+  ggtitle("duration of netflix titles over directors, only Movies") +
+  theme_minimal() 
+
+ggplotly(director_over_duration_plot)  
+ggplotly(director_over_duration_box)
+head(director_over_duration)
+```
+
+director grouped by / over listed_in, only for Movies
+```{r}
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+listed_in_list <- netflix %>% unnest_longer(listed_in)
+lvl=unique(c(as.character(listed_in_list$listed_in))) 
+
+director_over_listed <- netflix %>%
+  filter(type == "Movie") %>%
+  select(director, listed_in) %>%
+  unnest_longer(director) %>%
+  drop_na() %>%
+  unnest_longer(listed_in) %>%
+  group_by(listed_in) %>% # better add_count(rating)
+  mutate(n = n()) %>%
+  ungroup() %>% # always ungroup after calculations, to prevent future data management to likely produce errors
+  mutate(listed_fac = factor(listed_in, levels=lvl)) # use factor as numeric to plot the vertical lines # actually not required, vertical lines with group in aes and fct_infreq works on the fly
+    
+director_over_listed_plot <- ggplot(director_over_listed, aes(x = fct_infreq(director), y = fct_infreq(listed_fac), group = director)) +
+  geom_point(alpha = 0.25) +
+  geom_line(alpha = 0.15) +
+  ggtitle("genres of titles over directors, only Movies") +
+  theme_void()
+
+ggplotly(director_over_listed_plot)
+head(director_over_listed)
+print(lvl)
+```
+
+cast grouped by / over country
+```{r}
+country_over_cast <- netflix %>%
+  select(cast, country) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  distinct() %>%
+  mutate(duplicated = (duplicated(cast) | duplicated(cast, fromLast = TRUE)))
+
+country_over_cast_plot <- ggplot(country_over_cast, aes(x = fct_infreq(cast), y = fct_infreq(country), color = duplicated)) +
+  geom_point() +
+  # geom_jitter() +
+  theme_minimal() +
+  ggtitle("actors over country, colored if they produced in multiple countries")
+
+country_over_cast_bar <- ggplot(country_over_cast, aes(x=duplicated)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("count of actors producing in more than one country (first entry of lists)")
+
+ggplotly(country_over_cast_bar)
+plot(country_over_cast_plot)
+head(country_over_cast)
+summary(country_over_cast)
+```
+
+```{r}
+country_over_cast_ratio <- country_over_cast %>%
+  group_by(country) %>%
+  summarise(ratio = sum(duplicated == TRUE) / n())
+
+country_over_cast_ratio_plot <- ggplot(country_over_cast_ratio, aes(x = country, y = ratio)) +
+  geom_point() +
+  theme_minimal() +
+  ggtitle("ratio of actors working in more than one country over directors")
+
+country_over_cast_ratio_bar <- ggplot(country_over_cast, aes(x = fct_infreq(country), fill = duplicated)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("count of cast")
+
+ggplotly(country_over_cast_ratio_bar)
+ggplotly(country_over_cast_ratio_plot)
+summary(country_over_cast_ratio)
+head(country_over_cast_ratio)
+```
+
+cast occurrences over release_year
+```{r}
+cast_over_release <- netflix %>%
+  select(cast, release_year) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  ggplot(aes(x = release_year, y = fct_infreq(cast))) +
+    geom_point(alpha = 0.25) +
+    geom_line(alpha = 0.15) +
+    theme_void() +
+    ggtitle("actors occurences over release_year")
+
+plot(cast_over_release) # plot is pretty much useless without ggplotly to zoom in
+summary(cast_over_release)
+```
+
+cast grouped by / over rating
+```{r}
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+lvl=unique(c(as.character(netflix$rating))) 
+
+cast_over_rating <- netflix %>%
+  filter(type == "Movie") %>%
+  select(cast, rating) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  group_by(rating) %>% # better add_count(rating)
+  mutate(n = n()) %>%
+  ungroup() %>% # always ungroup after calculations, to prevent future data management to likely produce errors
+  mutate(rating_fac = factor(rating, levels=lvl)) # use factor as numeric to plot the vertical lines # actually not required, vertical lines with group in aes and fct_infreq works on the fly
+  
+cast_over_rating_plot <- ggplot(cast_over_rating, aes(y = fct_infreq(rating_fac), x = fct_infreq(cast), group = cast)) +
+    geom_point(alpha = 0.25) +
+    geom_line(alpha = 0.15) +
+    theme_minimal() +
+    ggtitle("actors over rating, only Movies")
+
+
+plot(cast_over_rating_plot) # plot is pretty much useless without ggplotly to zoom in
+head(cast_over_rating)
+print(lvl)
+```
+
+cast grouped by / over listed_in
+```{r}
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+listed_in_list <- netflix %>% unnest_longer(listed_in)
+lvl=unique(c(as.character(listed_in_list$listed_in))) 
+
+cast_over_listed <- netflix %>%
+  filter(type == "Movie") %>%
+  select(cast, listed_in) %>%
+  unnest_longer(cast) %>%
+  drop_na() %>%
+  unnest_longer(listed_in) %>%
+  group_by(listed_in) %>% # better acc_count(listed_in)
+  mutate(n = n()) %>%
+  ungroup() %>% # always ungroup after calculations, to prevent future data management to likely produce errors
+  mutate(listed_fac = factor(listed_in, levels=lvl)) # use factor as numeric to plot the vertical lines # actually not required, vertical lines with group in aes and fct_infreq works on the fly
+    
+cast_over_listed_plot <- ggplot(cast_over_listed, aes(x = fct_infreq(cast), y = fct_infreq(listed_fac), group = cast)) +
+  geom_point(alpha = 0.25) +
+  geom_line(alpha = 0.15) +
+  ggtitle("genres of titles over actors, only Movies") +
+  theme_void()
+
+plot(cast_over_listed_plot) # plot is pretty much useless without ggplotly to zoom in
+head(cast_over_listed)
+print(lvl)
+```
+
+country grouped by / over release_year
+```{r}
+country_over_release_year <- netflix %>%
+  select(country, release_year) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  drop_na()
+  
+country_over_release_year_plot <- ggplot(country_over_release_year, aes(x = release_year, y = fct_infreq(country))) +
+  geom_point(alpha = 0.25) +
+  geom_line(alpha = 0.15) +
+  geom_jitter(alpha = 0.10) +
+  ggtitle("country (first in list) over release year") +
+  theme_minimal()
+
+ggplotly(country_over_release_year_plot)
+head(country_over_release_year)
+```
+
+country grouped by / over rating
+```{r}
+lvl_country <- netflix %>% mutate(country = unlist(map(country, 1)))
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+lvl_rating=unique(c(as.character(netflix$rating))) 
+lvl_country=unique(c(as.character(lvl_country$country)))
+# actually not required fct_infreq works on the fly
+
+country_over_rating <- netflix %>%
+  select(rating, country) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  drop_na() %>%
+  mutate(rating_fac = factor(rating, levels=lvl_rating)) %>%
+  mutate(country_fac = factor(country, levels=lvl_country))
+
+country_over_rating_plot <- ggplot(country_over_rating, aes(y = fct_infreq(country), x = fct_infreq(rating))) +
+  geom_point(alpha = 0.25) +
+  geom_jitter(alpha = 0.10) +
+  ggtitle("country (first in list) over rating, both order by frequency") +
+  theme_minimal()
+
+ggplotly(country_over_rating_plot)
+head(country_over_rating)
+```
+
+country grouped by / over duration # better would be box plot with outliers
+```{r}
+lvl_country <- netflix %>% mutate(country = unlist(map(country, 1)))
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+lvl_country=unique(c(as.character(lvl_country$country)))
+# actually not required fct_infreq works on the fly
+
+country_over_duration <- netflix %>%
+  select(country, duration, type) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  drop_na() %>%
+  mutate(country_fac = factor(country, levels=lvl_country))
+
+country_over_duration_plot <- ggplot(country_over_duration, aes(x = fct_infreq(country_fac), y = duration)) +
+  geom_point(alpha = 1.0, size = 0.2) +
+  geom_jitter(alpha = 0.04) +
+  ggtitle("country (first in list) over duration, order by frequency") +
+  theme_minimal() +
+  facet_grid(rows = vars(type), scales = "free_y")
+
+country_over_duration_box <- ggplot(country_over_duration, aes(x = fct_infreq(country_fac), y = duration)) +
+  geom_boxplot() +
+  ggtitle("country (first in list) over duration, order by frequency") +
+  theme_minimal() +
+  facet_grid(rows = vars(type), scales = "free_y")
+
+ggplotly(country_over_duration_plot)
+ggplotly(country_over_duration_box)
+head(country_over_duration)
+```
+
+country grouped by / over listed_in # may color by continents or cultures 
+```{r}
+lvl_country <- netflix %>% mutate(country = unlist(map(country, 1)))
+lvl_listed <- netflix %>% unnest_longer(listed_in)
+# conversion of chr categorical variable to factors, in order to use them as number encoding with as.numeric(factor(rating, levels=lvl))
+lvl_country=unique(c(as.character(lvl_country$country)))
+lvl_listed=unique(c(as.character(lvl_listed$listed_in))) 
+# actually not required fct_infreq works on the fly
+
+country_over_listed <- netflix %>%
+  select(country, listed_in, type) %>%
+  mutate(country = unlist(map(country, 1))) %>%
+  unnest_longer(listed_in) %>%
+  drop_na() %>%
+  mutate(country_fac = factor(country, levels=lvl_country)) %>%
+  mutate(listed_fac = factor(listed_in, levels=lvl_listed))
+
+country_over_listed_plot <- ggplot(country_over_listed, aes(y = fct_infreq(country_fac), x = fct_infreq(listed_fac))) +
+  geom_point(alpha = 1.0, size = 0.2) +
+  geom_jitter(alpha = 0.04) +
+  ggtitle("country (first in list) over genre, both order by frequency") +
+  theme_minimal() 
+
+ggplotly(country_over_listed_plot)
+head(country_over_listed)
+```
+
+release_year over date_added (floored)
+```{r}
+release_over_added <- netflix %>%
+  select(release_year, date_added, title, country) %>%
+  mutate(date_floor = floor_date(date_added, 'month'))  %>% 
+  mutate(country = unlist(map(country, 1)))
+
+release_over_added_plot1 <- ggplot(release_over_added, aes(x = date_floor, y = release_year, col = country)) +
+    geom_point(alpha = 1.0, size = 0.2) +
+    geom_rug(alpha = 0.1) +
+    geom_jitter(aes(text = title), alpha = 0.2) +
+    theme_minimal() +
+    ggtitle("release_year over date_added (floored to begin of month)")
+
+release_over_added_plot2 <- ggplot(release_over_added, aes(x = date_floor, y = release_year)) +
+    geom_point(aes(text = title), alpha = 0.1) +
+    geom_smooth() +
+    theme_minimal() +
+    ggtitle("release_year over date_added (floored to begin of month)")
+
+ggplotly(release_over_added_plot1)
+ggplotly(release_over_added_plot2)
+head(release_over_added)
+```
+
+rating over date_added (floored)
+```{r}
+rating_over_added <- netflix %>%
+  select(rating, date_added, title) %>%
+  mutate(date_floor = floor_date(date_added, 'month'))
+
+rating_over_added_plot <- ggplot(rating_over_added, aes(x = date_floor, y = fct_infreq(rating))) +
+    geom_point(alpha = 1.0, size = 0.3) +
+    geom_jitter(aes(text = title), alpha = 0.05) +
+    theme_minimal() +
+    ggtitle("rating over date_added (floored to begin of month)")
+
+ggplotly(rating_over_added_plot)
+head(rating_over_added)
+```
+
+duration (only movie) over date_added (floored)
+```{r}
+duration_over_added <- netflix %>%
+  filter(type == "Movie") %>%
+  select(duration, date_added, title, country) %>%
+  mutate(date_floor = floor_date(date_added, 'month'))  %>% 
+  mutate(country = unlist(map(country, 1)))
+
+duration_over_added_plot1 <- ggplot(duration_over_added, aes(x = date_floor, y = duration, color = country)) +
+    geom_point(alpha = 0.2) +
+    geom_jitter(aes(text = title), alpha = 0.3) +
+    theme_minimal() +
+    ggtitle("duration (only movie) over date_added (floored to begin of month)") 
+
+duration_over_added_plot2 <- ggplot(duration_over_added, aes(x = date_floor, y = duration)) +
+    geom_point(aes(text = title), alpha = 0.2) +
+    geom_smooth() +
+    theme_minimal() +
+    ggtitle("duration (only movie) over date_added (floored to begin of month)") +
+    geom_rug(alpha=0.03)
+
+ggplotly(duration_over_added_plot1)
+ggplotly(duration_over_added_plot2)
+head(duration_over_added)
+```
+
+```{r}
+duration_over_added_small <- netflix %>%
+  filter(type == "Movie") %>%
+  select(duration, date_added, title, country) %>%
+  mutate(date_floor = floor_date(date_added, 'month'))  %>% 
+  mutate(country = unlist(map(country, 1))) %>%
+  filter(country == "United States" | country == "United Kingdom" | country == "Japan" | country == "India") %>%
+  filter(date_floor > as.Date("2017-01-01") & date_floor < as.Date("2021-01-01"))
+
+duration_over_added_plot3 <- ggplot(duration_over_added_small, aes(x = date_floor, y = duration, group = country)) +
+    geom_point(aes(text = title, color = country), alpha = 0.15) +
+    geom_smooth(aes(text = title, color = country)) +
+    theme_minimal() +
+    ggtitle("duration (only movie) over date_added for specific countries")
+
+ggplotly(duration_over_added_plot3)
+head(duration_over_added)
+```
+
+listed_in over date_added (date floored)
+```{r}
+listed_over_added <- netflix %>%
+  select(listed_in, date_added, title) %>%
+  mutate(date_floor = floor_date(date_added, 'month')) %>%
+  unnest_longer(listed_in)
+
+listed_over_added_plot <- ggplot(listed_over_added, aes(x = date_floor, y = fct_infreq(listed_in))) +
+    geom_point(aes(text = title), alpha = 1.0, size = 0.3) +
+    geom_jitter(aes(text = title), alpha = 0.05) +
+    theme_minimal() +
+    ggtitle("genres over date_added (floored to begin of month)")
+
+ggplotly(listed_over_added_plot)
+head(listed_over_added)
+```
+
+listed_in over release_year
+```{r}
+listed_over_release <- netflix %>%
+  select(listed_in, release_year, title) %>%
+  unnest_longer(listed_in)
+
+listed_over_release_plot <- ggplot(listed_over_release, aes(x = release_year, y = fct_infreq(listed_in))) +
+    geom_point(aes(text = title), alpha = 1.0, size = 0.3) +
+    geom_jitter(aes(text = title), alpha = 0.05) +
+    theme_minimal() +
+    ggtitle("genres over release_year") 
+
+ggplotly(listed_over_release_plot)
+head(listed_over_release)
+```
+
+duration grouped by / over rating
+```{r}
+duration_over_rating <- netflix %>%
+  filter(type == "Movie") %>%
+  select(rating, duration) 
+
+duration_over_rating_plot <- ggplot(duration_over_rating, aes(x = fct_infreq(rating), y = duration)) +
+  geom_point(alpha = 1.0, size = 0.3) +
+  geom_jitter(alpha = 0.1) +
+  ggtitle("duration over rating, order by frequency") +
+  theme_minimal() +
+  stat_summary(
+    fun = "mean",
+    geom = "point",
+    col = "black",
+    size = 3,
+    shape = 24,
+    fill = "red"
+  ) +
+  stat_summary(
+    fun = "median",
+    geom = "point",
+    col = "black",
+    size = 3,
+    shape = 24,
+    fill = "yellow"
+  ) 
+
+ggplotly(duration_over_rating_plot)
+head(duration_over_rating)
+```
+
+rating grouped by / over listed_in
+```{r}
+rating_over_listed <- netflix %>%
+  select(rating, listed_in, title) %>%
+  unnest_longer(listed_in)
+  
+rating_over_listed_plot <- ggplot(rating_over_listed, aes(x = fct_infreq(rating), y = fct_infreq(listed_in), text = title)) +
+  geom_point(alpha = 1.0, size = 0.3) +
+  geom_jitter(alpha = 0.05) +
+  ggtitle("rating over genres, order by frequency") +
+  theme_minimal()
+  
+ggplotly(rating_over_listed_plot)
+head(rating_over_listed)
+```
+
+duration grouped by / over listed_in (only for Movies)
+```{r}
+duration_over_listed <- netflix %>%
+  filter(type == "Movie") %>%
+  select(duration, listed_in, title) %>%
+  unnest_longer(listed_in)
+  s
+duration_over_listed_plot <- ggplot(duration_over_listed, aes(x = duration, y = fct_infreq(listed_in), text = title)) +
+  geom_point(alpha = 1.0, size = 0.3) +
+  geom_jitter(alpha = 0.05) +
+  ggtitle("duration over genres, only Movies") +
+  theme_minimal()
+  
+ggplotly(duration_over_listed_plot)
+head(duration_over_listed)
+```
+
+---
+correlation plots
+---
+
+reminder of variables
+```{r}
+head(netflix)
+```
+
+
+correlation plot of all numeric variables -> not much to get here, most of them are not ordered
+  The assumptions for Pearson correlation coefficient are as follows: level of measurement, related pairs, absence of outliers, normality of variables, linearity, and homoscedasticity.Level of measurement refers to each variable. For a Pearson correlation, each variable should be continuous
+```{r}
+# convert all columns to numeric or drop them
+netflix_corr <- netflix %>%
+  select(-show_id, -title, -description) %>%
+  mutate(date_month = month(date_added)) %>% # extract month from date as int
+  mutate(date_year = year(date_added)) %>% # extract year from date as int
+  select(-date_added) %>%
+  mutate(type = as.numeric(as.factor(type))) %>% # convert categorical chr to numerical encoding
+  mutate(rating = as.numeric(as.factor(rating))) %>%
+  unnest_longer(listed_in) %>%
+  mutate(listed_in = as.numeric(as.factor(rating))) %>%
+  select(-director, -cast, -country) %>%
+  cor() # calculating the correlation
+
+head(netflix_corr)
+corrplot.mixed(netflix_corr) # make the corr plot
+```
+

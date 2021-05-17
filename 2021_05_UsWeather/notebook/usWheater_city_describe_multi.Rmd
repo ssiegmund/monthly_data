@@ -1,0 +1,94 @@
+---
+title: "describe and visualize of US weather event data"
+subtitle: "city selection - multivariate"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) describe & visualize relationship between variables (multivariate)
+  (-) correlation plots 
+  (-) gather interesting observations for further investigation
+  (-) gather possible new features for extraction
+  
+todos:
+  (-) ...
+
+---
+information
+---
+https://www.kaggle.com/sobhanmoosavi/us-weather-events
+https://smoosavi.org/datasets/lstw
+
+Moosavi, Sobhan, Mohammad Hossein Samavatian, Arnab Nandi, Srinivasan Parthasarathy, and Rajiv Ramnath. “Short and Long-term Pattern Discovery Over Large-Scale Geo-Spatiotemporal Data.” In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, ACM, 2019.
+
+Weather event is a spatiotemporal entity, where such an entity is associated with location and time. Following is the description of available weather event types:
+
+    Severe-Cold: The case of having extremely low temperature, with temperature below -23.7 degrees of Celsius.
+    Fog: The case where there is low visibility condition as a result of fog or haze.
+    Hail: The case of having solid precipitation including ice pellets and hail.
+    Rain: The case of having rain, ranging from light to heavy.
+    Snow: The case of having snow, ranging from light to heavy.
+    Storm: The extremely windy condition, where the wind speed is at least 60 km/h.
+    Other Precipitation: Any other type of precipitation which cannot be assigned to previously described event types.
+
+The weather data is provided in terms of a CSV file with the following attributes:
+      Attribute	        Description	                                                Nullable
+1	    EventId	          This is the identifier of a record	                        No
+2   	Type	            The type of an event; examples are rain and snow.	          No
+3	    Severity	        The severity of an event, wherever applicable.        	    Yes
+4	    StartTime (UTC)	  The start time of an event in UTC time zone.          	    No
+5	    EndTime (UTC)	    The end time of an event in UTC time zone.	                No
+6	    TimeZone	        The US-based timezone based on the location of an event     No
+                        (eastern, central, mountain, and pacific).	
+7	    LocationLat	      The latitude in GPS coordinate.	                            Yes
+8   	LocationLng	      The longitude in GPS coordinate.	                          Yes
+9	    AirportCode	      The airport station that a weather event is reported from.	Yes
+10	  City	            The city in address record.	                                Yes
+11	  County	          The county in address record.	                              Yes
+12	  State	            The state in address record.	                              Yes
+13	  ZipCode	          The zipcode in address record.	                            Yes
+
+---
+insights 
+---
+  
+  (i) 
+  
+---
+stories
+---
+
+  (!) compare 4 big cities which are all close to the coast but vary in significantly in longitude and latitude
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+library(lubridate) # functions to work with date-times and time-spans
+library(corrplot) # correlation plots
+```
+
+---
+overview
+---
+```{r}
+head(weather)
+```
+```{r}
+summary(weather)
+```
+
+---
+multivariate City
+---
+
+
+
+
+

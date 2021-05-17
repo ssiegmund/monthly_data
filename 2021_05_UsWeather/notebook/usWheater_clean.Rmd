@@ -1,0 +1,228 @@
+---
+title: "data cleaning for US weather event data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (/) initial look at data to get a basic understanding and gather todos
+  (/) tidy up and cleaning of data set
+  (/) save pre-processed data set
+
+todos:
+  (-) ...
+
+---
+information
+---
+https://www.kaggle.com/sobhanmoosavi/us-weather-events
+https://smoosavi.org/datasets/lstw
+
+Moosavi, Sobhan, Mohammad Hossein Samavatian, Arnab Nandi, Srinivasan Parthasarathy, and Rajiv Ramnath. “Short and Long-term Pattern Discovery Over Large-Scale Geo-Spatiotemporal Data.” In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, ACM, 2019.
+
+Weather event is a spatiotemporal entity, where such an entity is associated with location and time. Following is the description of available weather event types:
+
+    Severe-Cold: The case of having extremely low temperature, with temperature below -23.7 degrees of Celsius.
+    Fog: The case where there is low visibility condition as a result of fog or haze.
+    Hail: The case of having solid precipitation including ice pellets and hail.
+    Rain: The case of having rain, ranging from light to heavy.
+    Snow: The case of having snow, ranging from light to heavy.
+    Storm: The extremely windy condition, where the wind speed is at least 60 km/h.
+    Other Precipitation: Any other type of precipitation which cannot be assigned to previously described event types.
+
+The weather data is provided in terms of a CSV file with the following attributes:
+      Attribute	        Description	                                                Nullable
+1	    EventId	          This is the identifier of a record	                        No
+2   	Type	            The type of an event; examples are rain and snow.	          No
+3	    Severity	        The severity of an event, wherever applicable.        	    Yes
+4	    StartTime (UTC)	  The start time of an event in UTC time zone.          	    No
+5	    EndTime (UTC)	    The end time of an event in UTC time zone.	                No
+6	    TimeZone	        The US-based timezone based on the location of an event     No
+                        (eastern, central, mountain, and pacific).	
+7	    LocationLat	      The latitude in GPS coordinate.	                            Yes
+8   	LocationLng	      The longitude in GPS coordinate.	                          Yes
+9	    AirportCode	      The airport station that a weather event is reported from.	Yes
+10	  City	            The city in address record.	                                Yes
+11	  County	          The county in address record.	                              Yes
+12	  State	            The state in address record.	                              Yes
+13	  ZipCode	          The zipcode in address record.	                            Yes
+
+---
+observations
+---
+
+  (i) columns: EventId          chr, unique, not ordered, identifier in form of W-<number>
+               Type             chr, categorical, not ordered,
+               Severity         chr, categorical, ordered,
+               StartTime(UTC)   S3: POSIXct, continuous, ordered,
+               EndTime(UTC)     S3: POSIXct, continuous, ordered,
+               TimeZone         chr, categorical, not ordered,
+               LocationLat      dbl, continuous, (not) ordered, Lng + Lat is same as AirportCode and ZipCode, thus may be viewed as categorical
+               LocationLng      dbl, continuous, (not) ordered,
+               AirportCode      chr, categorical, not ordered, (selection) can be dropped, same information as Lng + Lat
+               City             chr, categorical, not ordered,
+               County           chr, categorical, not ordered, (selection) can be dropped, same information as city
+               State            chr, categorical, not ordered, (selection) can be dropped, same information as city
+               ZipCode          dbl, categorical, not ordered, (selection) can be dropped, same information as Lng + Lat
+  (i) size of data set is 6274206 rows !  -> may be split up data set to process it or only work with aggregated data
+    -> I decided to take only a small sub-population of the data set for this project = 4 big, popular cities along the coasts (reduced to 28094 rows)
+      (other possible subsets: variation across a state, by type, severity, long/lat, time range)
+  (i) duplicated rows: (selection) no exact duplicates in rows
+  (i) missing values: (full data) only a few missing values in City and ZipCode, more in ZipCode (8) as in City (4), but when in ZipCode then also in City (as if it is a subset)
+          but tricky to see since there are so much rows, might be single entries (-> may missing at random) or even all of them for this level 
+        imputation may be possible by hand or via cross check with other entries from the same location (only if missing at random)
+          but for now no imputation or dropping needed
+        (selection) no missing values
+  (i) it seems that airports close to each other report the same event, but may vary a little in StartTime and EndTime 
+      (selection only) City variable is the same information as ZipCode, County, State; 
+        also LocationLng&Lat are essentially location of trporting airport, thus redundant with AirportCode
+  (i) not much to clean, only converting chr which are categorical variables to fctr for more convenient use, 
+      and renaming to remove (UTC) to avoid confusion with the brackets, other wise Time and Gps variables have correct type
+      (selection) dropping variables with redundant information after reducing the data set to four distinct sub-populations 
+        by City and reports from one of the present Airports (with most reporting)
+
+---
+stories
+---
+
+  (!) compare 4 big cities which are all close to the coast but vary in significantly in longitude and latitude
+  (!) other possible subsets: 
+            variation across a state, 
+            type (one type distribution over country), 
+            severity (one type distribution over country), 
+            time range aggregation or reduction
+  (i) spatial and time tracking of events, like rain clouds moving acorss the land 
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(lubridate) # functions to work with date-times and time-spans
+library(scrubr) # like dplyr but specifically for occurrence data
+```
+
+---
+import data
+---
+```{r}
+weather_raw <- read_csv(file = '../data/WeatherEvents_Jan2016-Dec2020.csv')
+weather <- weather_raw %>% filter(City %in% c("Los Angeles", "New York", "Houston", "Seattle"))
+```
+
+---
+first look at data
+---
+```{r}
+head(weather, 30)
+```
+
+```{r}
+tail(weather)
+```
+
+```{r}
+summary(weather)
+```
+
+---
+missing values
+---
+only a few missing values in City and ZipCode, more in ZipCode (8) as in City (4), but when in ZipCode then also in City (as if it is a subset)
+  but tricky to see since there are so much rows, might be single entries (-> may missing at random) or even all of them for this level 
+imputation may be possible by hand or via cross check with other entries from the same location (only if missing at random)
+  but for now no imputation or dropping needed
+
+```{r, fig.asp=1.5}
+# create data frame with information on whether the value in each cell is missing
+missing_by_column <- weather %>%
+  is.na %>% # check if each cell is na
+  as_tibble %>% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame 
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill = is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = "",
+                  labels = c("present", "missing")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.9, size=8)) +
+  labs(x = "variables in dataset",
+       y = "rows / observations")
+```
+
+---
+duplicated rows
+---
+```{r}
+# get row numbers of duplicated rows
+duplicated_rows = tibble(duplicated = duplicated(weather), row = 1:nrow(weather)) %>%
+  filter(duplicated == T)
+
+# plot duplicated rows as black lines
+ggplot(duplicated_rows, aes(xintercept = row)) +
+  geom_vline(aes(xintercept = row)) + # plot a black line for each duplicated row
+  ggtitle("indexes of duplicated rows") + # add title
+  coord_flip() + # flip x & y axis
+  scale_x_reverse() # reverse x axis
+```
+
+---
+redundant information
+---
+it seems that airports close to each other report the same event, but may vary a little in StartTime and EndTime 
+(selection only) City variable is the same information as ZipCode, County, State; also LocationLng&Lat are essentially location of trporting airport, thus redundant with AirportCode
+
+```{r}
+weather_assumption <- weather %>% distinct(AirportCode, ZipCode, County, State, City, LocationLat, LocationLng, .keep_all = TRUE)
+
+summary(weather_assumption)
+head(weather_assumption, 25)
+```
+```{r}
+head(weather %>% filter(AirportCode == "KEFD"), 25)
+head(weather %>% filter(AirportCode == "KIAH"), 25)
+head(weather %>% filter(AirportCode == "KHOU"), 25)
+head(weather %>% filter(AirportCode == "KMCJ"), 25)
+```
+
+---
+cleaning
+---
+not much to clean, only converting chr which are categorical variables to fctr for more convenient use, and renaming to remove (UTC) to avoid confusion with the brackets, other wise Time and Gps variables have correct type
+(selection) dropping variables with redundant information after reducing the data set to four distinct sub-populations by City and reports from one of the present Airports (with most reporting)
+
+```{r}
+weather <- weather %>%
+  filter(AirportCode %in% c("KNYC", "KSEA", "KCQT", "KIAH")) %>% # use event data only from one airport since close airports report the same event, what happens a lot in airports from big cities, use the airport with more events
+  select(-AirportCode, -ZipCode, -County, -State) %>% # drop variables with same information as cities (selection only)
+  mutate(Type = as.factor(Type)) %>% # convert Type from chr to factor
+  mutate(Severity = as.factor(Severity)) %>% # convert Severity from chr to factor
+  mutate(TimeZone = as.factor(TimeZone)) %>% # convert TimeZone from chr to factor
+  mutate(City = as.factor(City)) %>% # convert TimeZone from chr to factor
+  rename(StartTime = 'StartTime(UTC)') %>% # rename StartTime to prevent confusion with ()
+  rename(EndTime = 'EndTime(UTC)') # rename EndTime to prevent confusion with ()
+
+head(weather)
+```
+
+---
+additional variables
+---
+```{r}
+weather <- weather %>%
+  mutate(Duration = EndTime - StartTime) # add the duration between StartTime and EndTime of the event
+
+head(weather)
+```
+
+---
+save processed data
+---
+```{r}
+write_csv(weather, '../data/WeatherEvents_CitySelection.csv')
+```
+

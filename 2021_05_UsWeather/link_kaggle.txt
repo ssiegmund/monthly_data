@@ -1,0 +1,2 @@
+https://www.kaggle.com/sobhanmoosavi/us-weather-events
+https://smoosavi.org/datasets/lstw

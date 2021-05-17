@@ -1,0 +1,199 @@
+---
+title: "data cleaning of netflix_titles.csv for netflixListings"
+output: html_notebook
+---
+
+purpose of notebook:
+  (/) initial look at data to get a basic understanding, gather todos
+  (/) tidy up and cleaning of data set
+  (x) save pre-processed data set -> not possible as long as not flat, ie, tibble contains lists as entries
+
+todos:
+  (/) check NAs with rtatman visualization 
+  (/) check for duplicated rows with rtatman viz
+  (/) column names look fine, no need for clean_names() from janitor
+  (/) names in column cast, description need other codec -> use read_csv is fine, but read.csv() seems not to use UTF-8
+  (/) missing values in director -> filled with NA by read_csv, likely not missing at random, could be checked with additional database like IMDB
+  (/) dates instead of chr in column date
+  (/) cast column is a very long string, should be a list of names or different encoding as needed
+  (/) in duration remove the unit, may need to be separated for TV Show/Seasons and Movie/min later
+  (/) listed_in should be a list of categories, better different encoding as needed, also may need cleaner naming convention
+  (/) column country has some times multiple countries, replace str with list
+  (?) change categorical encoding for: type, country, rating, listed_in -> may be later when required
+  
+observations:
+  (i) columns: show_id -> chr, unique values, identifier - Unique ID for every Movie / Tv Show
+               type -> chr, categorical, 2 values - Identifier - A Movie or TV Show
+               title -> chr, (almost?) unique value - Title of the Movie / Tv Show
+               director -> chr, categorical, many values - Director of the Movie
+               cast -> chr, list of many names - Actors involved in the movie / show
+               country -> chr, categorical - Country where the movie / show was produced
+               date_added -> date, time value - Date it was added on Netflix
+               release_year -> int, categorical - Actual Release year of the move / show
+               rating -> chr, categorical - TV Rating of the movie / show 
+               duration -> int with unit, two main features (TV Show in Seasons, Movie in min) - Total Duration - in minutes or number of seasons
+               listed_in -> chr, categorical, list of categories - Genere
+               description -> chr, longer text - The summary description
+  (i) size of data set is 7787 rows
+  (i) no duplicated rows
+  (i) missing values: a lot in directors, some in cast and country -> only imputation possible is by using another data set like IMDB
+  
+stories:
+  (!) description with NLP sentiment analysis
+  (!) network analysis with cast and director
+  (!) increase of number over all, types, countries, rating, listed_in; usage of cast or director,  .. over time 
+               
+
+---
+load packages
+```{r}
+library(tidyverse) # tidy data frame
+library(lubridate) # date 
+library(stringr) # strings, but also already in tidyverse
+library(scrubr) # like dplyr but specifically for occurrence data
+```
+
+---
+import data to tibble named 'netflix'
+```{r}
+netflix_raw <- read_csv(file = '../data/netflix_titles.csv')
+netflix <- netflix_raw
+```
+
+---
+check for missing values in data set 
+```{r, fig.asp=1.5}
+# create a data frame with information on whether the value in each cell is missing
+missing_by_column <- netflix %>%
+  is.na %>% # check if each cell is na
+  as_tibble %>% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame, with a good-looking theme
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill = is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = "",
+                  labels = c("present", "missing")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.9, size=8)) +
+  labs(x = "variables in dataset",
+       y = "rows / oberservations")
+```
+
+---
+check for duplicated rows
+```{r}
+# get the row numbers of duplictaed rows
+duplicated_rows <- tibble(duplicated = duplicated(netflix), row = 1:nrow(netflix)) %>%
+  filter(duplicated == T)
+
+# plot duplicated rows as black lines
+ggplot(duplicated_rows, aes(xintercept = row)) +
+  geom_vline(aes(xintercept = row)) + # plot a black line for each duplicated row
+  ggtitle("indexes of duplicated rows") + # add title
+  coord_flip() + scale_x_reverse() # flip x & y axis and reverse the x axis
+```
+
+---
+data cleaning section
+---
+
+dates instead of chr in column date
+```{r}
+dates <- netflix %>%
+  select(date_added) %>%
+  mutate(date_added_format = mdy(date_added))
+
+netflix$date_added <- dates$date_added_format
+
+print(netflix$date_added, max=7)
+```
+
+
+cast column is a very long string, should be a list of names
+```{r}
+cast <- netflix %>%
+  select(cast) %>%
+  mutate(cast_list = str_split(cast, ", "))
+
+netflix$cast <- cast$cast_list
+
+print(netflix$cast, max=2)
+print(netflix$cast[1])
+```
+
+in duration remove the unit, may need to be separated for TV Show/Seasons and Movie/min later
+```{r}
+duration <- netflix %>%
+  select(duration) %>%
+  mutate(duration_unit = parse_number(duration))
+
+netflix$duration <- duration$duration_unit
+```
+
+listed_in should be a list of categories, also needs cleaner naming convention
+```{r}
+remove_comma <- function(str) gsub(",", "", gsub("([a-zA-Z]),", "\\1", str)) # function to remove commas from a given str
+glue_ampersand <- function(str) gsub(" & ", "_", str) # better use _ instead of &
+remove_apos <- function(str) gsub("'", "", gsub("([a-zA-Z])'", "\\1", str)) # function to remove apostrophes from a given str
+
+listed_clean <- netflix %>%
+  select(listed_in) %>%
+  mutate(listed_clean = remove_comma(listed_in)) %>% # remove commas from str
+  mutate(listed_clean = str_remove_all(listed_clean, "International|TV|Shows|Movies|Series|Features")) %>% # remove stop words from listed_in column
+  mutate(listed_clean = str_trim(listed_clean)) %>% # remove whitespace from start and end
+  mutate(listed_clean = str_squish(listed_clean)) %>% # remove repeated whitespace inside str
+  mutate(listed_clean = glue_ampersand(listed_clean)) %>% # remove whitspace around ampersand 
+  mutate(listed_clean = remove_apos(listed_clean)) %>% # remove apostrophes from str
+  mutate(listed_clean = str_split(listed_clean, " ")) # convert to list
+
+netflix$listed_in <- listed_clean$listed_clean
+
+print(netflix$listed_in, max=2)
+```
+column country has some times multiple countries, replace str with list
+```{r}
+remove_last_comma <- function(str) gsub(",$", "", str) # function to remove last comma from a given str
+
+country <- netflix %>%
+  select(country) %>%
+  mutate(country_list = remove_last_comma(country)) %>%
+  mutate(country_list = str_split(country_list, ", "))
+  
+netflix$country <- country$country_list
+
+print(netflix$country, max=2)
+```
+
+column director has some times multiple names, replace str with list
+```{r}
+director <- netflix %>%
+  select(director) %>%
+  mutate(director_list = str_split(director, ", "))
+
+netflix$director <- director$director_list
+
+print(netflix$director, max=2)
+```
+
+--- 
+write cleaned netflix data to csv -> not possible since not flat
+```{r}
+# write_csv(netflix, '../data/netflix_clean.csv')
+```
+
+---
+overview of data with head, tail, summary
+```{r}
+head(netflix, 10)
+```
+
+```{r}
+tail(netflix, 10)
+```
+
+```{r}
+summary(netflix)
+```
+

@@ -1,0 +1,290 @@
+---
+title: "EDA meteor strike data"
+output: html_notebook
+---
+
+Some intro text?
+
+
+load packages
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(ggthemes)
+library(plotly)
+library(hexbin)
+library(viridis)
+library(corrplot)
+```
+
+assign data from csv to a variable (tbl) named 'data'
+
+```{r}
+data <- read_csv('../data/MeteorStrikesDataSet1.csv') %>%
+          clean_names()
+```
+
+first look at data with head, tail and summary
+
+```{r}
+head(data, 50)
+```
+
+
+```{r}
+tail(data)
+```
+
+```{r}
+summary(data)
+```
+```{r}
+data %>%
+  filter(mass_g < 1000) %>%
+  summary()
+```
+
+
+```{r}
+missingYear <- data %>% 
+  filter(is.na(year))
+
+missingYear
+```
+
+look at distribution of numerical data
+
+```{r}
+histogramYears <- ggplot(data, aes(x = year)) +
+  geom_histogram(bins = 90) +
+  ggtitle('distribution of meteors per year') + 
+  theme_fivethirtyeight()
+
+ggplotly(histogramYears)
+```
+
+```{r}
+qqnorm(data$year)
+```
+```{r}
+data1800y <- data %>%
+  filter(year > 1800)
+
+qqnorm(data1800y$year)
+```
+
+```{r}
+data1960y <- data %>%
+  filter(year > 1960)
+
+qqnorm(data1960y$year)
+```
+
+```{r}
+barplot1960 <- ggplot(data1960y, aes(x = year)) +
+  geom_bar() +
+  theme_fivethirtyeight()
+
+ggplotly(barplot1960)/
+```
+
+
+```{r}
+#histogram1980 <- ggplot(data1980y, aes(x = year)) +
+#  geom_histogram(bins = 90) +
+#  ggtitle('distribution of meteors per year') + 
+#  theme_fivethirtyeight()
+
+#ggplotly(histogram1980)
+```
+
+
+```{r}
+histogramMass <- ggplot(data, aes(x = mass_g)) +
+  geom_histogram(bins = 90) +
+  ggtitle('distribution of mass_g of meteorites') +
+  theme_fivethirtyeight()
+
+ggplotly(histogramMass)
+```
+
+```{r}
+qqnorm(data$mass_g)
+```
+
+```{r}
+data1000g <- data %>%
+  filter(mass_g < 1e+04)
+
+qqnorm(data1000g$mass_g)
+```
+
+
+```{r}
+histogram1000g <- ggplot(data1000g, aes(x = mass_g)) +
+  geom_histogram(bins = 90) +
+  ggtitle('distribution of mass_g of meteorites') +
+  theme_fivethirtyeight()
+
+ggplotly(histogram1000g)
+```
+
+```{r}
+data176g <- data %>%
+  filter(mass_g < 176)
+
+qqnorm(data176g$mass_g)
+```
+
+
+```{r}
+histogram176g <- ggplot(data176g, aes(x = mass_g)) +
+  geom_histogram(bins = 90) +
+  ggtitle('distribution of mass_g of meteorites') +
+  theme_fivethirtyeight()
+
+ggplotly(histogram176g)
+```
+
+```{r}
+data25g <- data %>%
+  filter(mass_g < 25)
+
+qqnorm(data25g$mass_g)
+```
+
+
+```{r}
+histogram25g <- ggplot(data25g, aes(x = mass_g)) +
+  geom_histogram(bins = 90) +
+  ggtitle('distribution of mass_g of meteorites') +
+  theme_fivethirtyeight()
+
+ggplotly(histogram25g)
+```
+
+```{r}
+histogramLogMass <- ggplot(data, aes(x = mass_g)) +
+  geom_histogram(bins = 70) +
+  ggtitle('distribution of mass_g of meteorites') +
+  theme_fivethirtyeight() + 
+  scale_x_log10()
+
+ggplotly(histogramLogMass)
+```
+
+```{r}
+ggplot(data, aes(x = fell_found)) +
+  geom_bar() +
+  ggtitle('comparison of found and fell meteorites') +
+  xlab('') + 
+  theme_fivethirtyeight()
+```
+
+```{r}
+longOlat <- ggplot(data) +
+  geom_point(mapping = aes(y = latitude, x = longitude), alpha = 1 / 1)
+
+longOlat
+#ggplotly(longOlat)
+```
+
+```{r}
+longOlatAlp <- ggplot(data) +
+  geom_point(mapping = aes(y = latitude, x = longitude), alpha = 1 / 20)
+
+longOlatAlp
+#ggplotly(longOlatAlp)
+```
+
+
+```{r}
+longOlatHex <- ggplot(data) +
+  geom_hex(mapping = aes(y = latitude, x = longitude)) +
+  scale_fill_viridis()
+
+ggplotly(longOlatHex)
+```
+
+```{r}
+massYear <- ggplot(data) +
+  geom_point(mapping = aes(x = year, y = mass_g), alpha = 1 / 1)
+
+massYear
+#ggplotly(massYear)
+```
+
+```{r}
+data1980y1e4m <- data %>%
+  filter(year > 1800) %>%
+  filter(mass_g < 1e6)
+
+massYearSmall <- ggplot(data1980y1e4m) +
+  geom_point(mapping = aes(x = year, y = mass_g), alpha = 1 / 10)
+
+massYearSmall
+#ggplotly(massYear)
+```
+
+```{r}
+data1980y1e4m <- data %>%
+  filter(year > 1940) %>%
+  filter(mass_g < 1e4)
+
+massYearSmall <- ggplot(data1980y1e4m) +
+  geom_point(mapping = aes(x = year, y = mass_g), alpha = 1 / 10)
+
+massYearSmall
+#ggplotly(massYear)
+```
+
+```{r}
+data %>%
+  select_if(is.numeric) %>%
+  cor() %>%
+  corrplot(method = "square")
+
+```
+```{r}
+data %>%
+  filter(fell_found == 'Fell')
+```
+
+```{r}
+data %>%
+  filter(year >= 2000)
+```
+
+```{r}
+data %>%
+  filter(longitude > 165) %>%
+  filter(latitude < -80) %>%
+  ggplot() +
+    geom_hex(mapping = aes(y = latitude, x = longitude)) + 
+    scale_fill_viridis()
+
+```
+
+```{r}
+data %>%
+  filter(longitude < 50) %>%
+  filter(longitude > 0) %>%
+  filter(latitude < -50) %>%
+  ggplot() +
+    geom_hex(mapping = aes(y = latitude, x = longitude)) + 
+    scale_fill_viridis()
+
+```
+
+```{r}
+data %>%
+  filter(longitude < 35.75) %>%
+  filter(longitude > 35.6) %>%
+  filter(latitude < -71) %>%
+  filter(latitude > -72) %>%
+  ggplot() +
+    geom_hex(mapping = aes(y = latitude, x = longitude)) + 
+    scale_fill_viridis()
+
+```
