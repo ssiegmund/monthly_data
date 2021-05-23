@@ -1,0 +1,255 @@
+---
+title: "describe and visualize of US weather event data"
+subtitle: "city selection - univariate"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (/) describe & visualize single variables (univariate)
+  (-) gather interesting observations for further investigation
+  (-) gather possible new features for extraction
+  
+todos:
+  (-) ...
+
+---
+information
+---
+https://www.kaggle.com/sobhanmoosavi/us-weather-events
+https://smoosavi.org/datasets/lstw
+
+Moosavi, Sobhan, Mohammad Hossein Samavatian, Arnab Nandi, Srinivasan Parthasarathy, and Rajiv Ramnath. “Short and Long-term Pattern Discovery Over Large-Scale Geo-Spatiotemporal Data.” In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, ACM, 2019.
+
+Weather event is a spatiotemporal entity, where such an entity is associated with location and time. Following is the description of available weather event types:
+
+    Severe-Cold: The case of having extremely low temperature, with temperature below -23.7 degrees of Celsius.
+    Fog: The case where there is low visibility condition as a result of fog or haze.
+    Hail: The case of having solid precipitation including ice pellets and hail.
+    Rain: The case of having rain, ranging from light to heavy.
+    Snow: The case of having snow, ranging from light to heavy.
+    Storm: The extremely windy condition, where the wind speed is at least 60 km/h.
+    Other Precipitation: Any other type of precipitation which cannot be assigned to previously described event types.
+
+The weather data is provided in terms of a CSV file with the following attributes:
+      Attribute	        Description	                                                Nullable
+1	    EventId	          This is the identifier of a record	                        No
+2   	Type	            The type of an event; examples are rain and snow.	          No
+3	    Severity	        The severity of an event, wherever applicable.        	    Yes
+4	    StartTime (UTC)	  The start time of an event in UTC time zone.          	    No
+5	    EndTime (UTC)	    The end time of an event in UTC time zone.	                No
+6	    TimeZone	        The US-based timezone based on the location of an event     No
+                        (eastern, central, mountain, and pacific).	
+7	    LocationLat	      The latitude in GPS coordinate.	                            Yes
+8   	LocationLng	      The longitude in GPS coordinate.	                          Yes
+9	    AirportCode	      The airport station that a weather event is reported from.	Yes
+10	  City	            The city in address record.	                                Yes
+11	  County	          The county in address record.	                              Yes
+12	  State	            The state in address record.	                              Yes
+13	  ZipCode	          The zipcode in address record.	                            Yes
+
+---
+insights 
+---
+  
+  (i) City: most observations/rows in New York, least are in Los Angeles with less than half; likely because the defined events occurred less often 
+  (i) Type:
+      mostly rain in Houston, New York and Seattle, only in Los Angeles is more fog than rain, overall is rain three times as much as fog on second place, 
+      (there is a lot of other precipitation only in New York, but for only from KJRB airport, which is now filtered out)
+      snow mostly in New York and Seatlle, but cold in New York and Los Angeles, also overall not much, 
+      almost no storm and hail
+  (i) Severity:
+      mostly are light, twice as much as as moderate, which seems also be twice as much as severe, as well as heavy which is again the half
+      Los Angeles has more moderate, a lot more heavy in New York and Houston; Los Angeles has a lot severe compared to light -> because of missing rain?
+      (unsure what UNK is, best guess is "unkonwn", this is primarily in New York KJRB, which is now filtered out -> may be overlap with other precipitation from Type?)
+  (i) TimeZone: 
+      Los Angeles and Seattle both in Pacific, New York in Eastern, Houston in Central; 
+      Time zone information only relevant for knowing the day/night time since Time variables are in UTC for all observations
+  (i) Location Lng&Lat: same observation as for city, since we reduced to one airport per city
+      (we can see the four cities across the us map, as well as that the reports are mostly from two airports, only in Houston from 4 airports, 
+      was before reduction to one airport each)
+
+
+---
+stories
+---
+
+  (!) compare 4 big cities which are all close to the coast but vary in significantly in longitude and latitude
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+library(lubridate) # functions to work with date-times and time-spans
+library(corrplot) # correlation plots
+
+library(ggmap) #extends ggplot to allow for spatial and geographic visualization
+library(sf) # standardized way to encode spatial vector data 
+library(mapview) # create interactive visualisations of spatial data with or without background maps
+```
+
+---
+overview
+---
+```{r}
+head(weather)
+```
+```{r}
+summary(weather)
+```
+
+---
+univariate City
+---
+most observations/rows in New York, least are in Los Angeles with less than half; likely because the defined events occurred less often 
+
+```{r}
+city_plot_stack <- weather %>%
+  ggplot(aes(x = fct_infreq(City))) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("Distribution across 4 cities")
+
+ggplotly(city_plot_stack)
+```
+
+---
+univariate TimeZone
+---
+Los Angeles and Seattle both in Pacific, New York in Eastern, Houston in Central; Time zone information only relevant for knowing the day/night time since Time variables are in UTC for all observations
+
+```{r}
+timeZone_plot_stack <- weather %>%
+  ggplot(aes(x = fct_infreq(TimeZone), fill = City)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("TimeZone across 4 cities")
+
+ggplotly(timeZone_plot_stack)
+```
+
+---
+univariate Type
+---
+mostly rain in Houston, New York and Seattle, only in Los Angeles is more fog than rain, overall is rain three times as much as fog on second place, 
+(there is a lot of other precipitation only in New York, but for only from KJRB airport, which is now filtered out)
+snow mostly in New York and Seatlle, but cold in New York and Los Angeles, also overall not much, 
+almost no storm and hail
+
+```{r}
+type_plot_point <- weather %>%
+  ggplot(aes(x = fct_infreq(Type), y = fct_infreq(City), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    theme_minimal() +
+    ggtitle("Type over City")
+
+ggplotly(type_plot_point)
+```
+```{r}
+type_plot_stack <- weather %>%
+  ggplot(aes(x = fct_infreq(Type), fill = fct_infreq(City))) +
+    geom_bar() +
+    theme_minimal() +
+    ggtitle("Type distribution across 4 cities")
+
+ggplotly(type_plot_stack)
+```
+```{r}
+type_plot_facet <- weather %>%
+  ggplot(aes(x = fct_infreq(Type), fill = fct_infreq(City))) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("Type distribution across 4 cities") +
+  facet_grid(rows = vars(City))
+
+ggplotly(type_plot_facet)
+```
+```{r}
+cityType_plot_stack <- weather %>%
+  ggplot(aes(x = fct_infreq(City), fill = fct_infreq(Type))) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("Type per city ")
+
+ggplotly(cityType_plot_stack)
+```
+
+---
+univariate Severity
+---
+mostly are light, twice as much as as moderate, which seems also be twice as much as severe, as well as heavy which is again the half
+Los Angeles has more moderate, a lot more heavy in New York and Houston; Los Angeles has a lot severe compared to light -> because of missing rain?
+(unsure what UNK is, best guess is "unkonwn", this is primarily in New York KJRB, which is now filtered out -> may be overlap with other precipitation from Type?)
+
+```{r}
+severity_plot_point <- weather %>%
+  ggplot(aes(x = fct_infreq(Severity), y = fct_infreq(City), col = fct_infreq(City))) +
+  geom_jitter(alpha = 0.2, size = 0.5) +
+  theme_minimal() +
+  ggtitle("Type over City")
+
+ggplotly(severity_plot_point)
+```
+```{r}
+severity_plot_stack <- weather %>%
+  ggplot(aes(x = fct_infreq(Severity), fill = fct_infreq(City))) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("Severity distribution across 4 cities")
+
+ggplotly(severity_plot_stack)
+```
+```{r}
+severity_plot_facet <- weather %>%
+  ggplot(aes(x = fct_infreq(Severity), fill = fct_infreq(City))) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("Type distribution across 4 cities") +
+  facet_grid(rows = vars(City))
+
+ggplotly(severity_plot_facet)
+```
+```{r}
+citySeverity_plot_stack <- weather %>%
+  ggplot(aes(x = fct_infreq(City), fill = fct_infreq(Severity))) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("Severity per city ")
+
+ggplotly(citySeverity_plot_stack)
+```
+
+---
+univariate LocationLng&Lat
+---
+same observation as for city, since we reduced to one airport per city
+(we can see the four cities across the us map, as well as that the reports are mostly from two airports, only in Houston from 4 airports, was before reduction to one airport each)
+
+```{r}
+# same for longitudinal coords
+lat_plot <- weather %>%
+  ggplot(aes(x = fct_infreq(as.factor(LocationLat)), fill = City)) +
+  geom_bar() +
+  theme_minimal() +
+  ggtitle("latitude coord of the reporting airports (treated as categorical)")
+  
+ggplotly(lat_plot)
+```
+
+```{r}
+# https://www.jessesadler.com/post/geocoding-with-r/
+locations_sf <- st_as_sf(weather %>% distinct(LocationLng, LocationLat, .keep_all = TRUE), #  function to transform the locations tibble into an sf object is understandable even without knowing the details. The function to make an sf object takes three main arguments
+                         coords = c("LocationLng", "LocationLat"), # the first two are the data frame to be converted and the columns that contain the geographic data. This second argument uses the c() function to combine the “lon” and “lat” columns
+                         crs = 4326) # the third argument determines the coordinate reference system (crs) for the data
+
+head(locations_sf, 11)
+mapview(locations_sf) # with the data in the correct format, a simple call to the mapview() function creates an interactive map with all the locations plotted as points
+```
+
+
+

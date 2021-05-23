@@ -1,0 +1,296 @@
+---
+title: "describe and visualize of US weather event data"
+subtitle: "city selection - multivariate for time variables"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) describe & visualize relationship between variables (multivariate)
+  (-) correlation plots 
+  (-) gather interesting observations for further investigation
+  (-) gather possible new features for extraction
+  
+todos:
+  (-) ...
+
+---
+information
+---
+https://www.kaggle.com/sobhanmoosavi/us-weather-events
+https://smoosavi.org/datasets/lstw
+
+Moosavi, Sobhan, Mohammad Hossein Samavatian, Arnab Nandi, Srinivasan Parthasarathy, and Rajiv Ramnath. “Short and Long-term Pattern Discovery Over Large-Scale Geo-Spatiotemporal Data.” In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, ACM, 2019.
+
+Weather event is a spatiotemporal entity, where such an entity is associated with location and time. Following is the description of available weather event types:
+
+    Severe-Cold: The case of having extremely low temperature, with temperature below -23.7 degrees of Celsius.
+    Fog: The case where there is low visibility condition as a result of fog or haze.
+    Hail: The case of having solid precipitation including ice pellets and hail.
+    Rain: The case of having rain, ranging from light to heavy.
+    Snow: The case of having snow, ranging from light to heavy.
+    Storm: The extremely windy condition, where the wind speed is at least 60 km/h.
+    Other Precipitation: Any other type of precipitation which cannot be assigned to previously described event types.
+
+The weather data is provided in terms of a CSV file with the following attributes:
+      Attribute	        Description	                                                Nullable
+1	    EventId	          This is the identifier of a record	                        No
+2   	Type	            The type of an event; examples are rain and snow.	          No
+3	    Severity	        The severity of an event, wherever applicable.        	    Yes
+4	    StartTime (UTC)	  The start time of an event in UTC time zone.          	    No
+5	    EndTime (UTC)	    The end time of an event in UTC time zone.	                No
+6	    TimeZone	        The US-based timezone based on the location of an event     No
+                        (eastern, central, mountain, and pacific).	
+7	    LocationLat	      The latitude in GPS coordinate.	                            Yes
+8   	LocationLng	      The longitude in GPS coordinate.	                          Yes
+9	    AirportCode	      The airport station that a weather event is reported from.	Yes
+10	  City	            The city in address record.	                                Yes
+11	  County	          The county in address record.	                              Yes
+12	  State	            The state in address record.	                              Yes
+13	  ZipCode	          The zipcode in address record.	                            Yes
+
+---
+insights 
+---
+  
+  (i) we can see the waves in the frequency of the events, but it seems that the duration is stable / constant, except for Los Angeles;
+      may be the events are a little longer over the years on average
+  (i) Snow comes in seasons in New York and Seattle of course, but cold seem to increase in New York and Los Angeles since 2019 and not stick to winter season;
+      Fog is mostly in Los Angeles and also increasing since 2019, 
+      Rain is present is all cities all the year, Seattle seems to have waves / seasons of Rain, and Los Angeles hast most year almost no Rain with spikes, 
+      funny is that in overall plot per city the snow seasons in New York did not really show, but in Seattle they really do, maybe since they sync with rain waves
+  (i) Severe events seem to increase since 2019, which might be Fog in Los Angeles
+  (i) can't quite find the reason why there is so much reporting at specific fixed minutes, might be automated but trigger is unknown, 
+      but there is an interesting pattern here, might be because of recording method
+  (i) Houston has constant Rain and less Fog in Summer; Los Angeles has no Rain in Summer, but constant Fog and also Cold; New York has constant Rain and Fog, Snow in Winter, Cold          also all Year; Seattle has less Rain in Summer, Fog and Snow in Winter
+  (i) Fog seems to have starting hours (and end): Houston 9 - 12 to 13 - 14, Los Angeles 14 - 16 to 15 - 19, New York 12 - 14 to 14 - 16, Seattle 13 - 16 to 15 - 18
+      all others are constant across hours of day
+  (i) Houston stable over years, Los Angeles increased Cold and Fog, New York mostly stable, but jump 2019 in Cold, Seattle little increase in Fog and decrease in Snow
+
+---
+stories
+---
+
+  (!) compare 4 big cities which are all close to the coast but vary in significantly in longitude and latitude
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+library(lubridate) # functions to work with date-times and time-spans
+library(corrplot) # correlation plots
+library(ggmosaic) # geom_mosaic() mosaic plots for categorical data
+```
+
+---
+overview
+---
+```{r}
+head(weather)
+```
+```{r}
+summary(weather)
+```
+
+---
+multivariate Duration over StartTime
+---
+we can see the waves in the frequency of the events, but it seems that the duration is stable / constant, except for Los Angeles;
+may be the events are a little longer over the years on average
+
+-> is there another plot for seeing the duration over time and verifying it to be mostly constant?
+
+```{r}
+time_duration_plot_point <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  ggplot(aes(x = StartTime, y = as.numeric(Duration), col = fct_infreq(City))) +
+    geom_point(alpha = 0.2, size = 0.5) +
+    geom_smooth() +
+    theme_minimal() +
+    facet_grid(vars(City)) +
+    ggtitle("Duration over StartTime")
+
+ggplotly(time_duration_plot_point)
+```
+
+---
+multivariate Type over StartTime
+---
+Snow comes in seasons in New York and Seattle of course, but cold seem to increase in New York and Los Angeles since 2019 and not stick to winter season;
+Fog is mostly in Los Angeles and also increasing since 2019, 
+Rain is present is all cities all the year, Seattle seems to have waves / seasons of Rain, and Los Angeles hast most year almost no Rain with spikes, 
+funny is that in overall plot per city the snow seasons in New York did not really show, but in Seattle they really do, maybe since they sync with rain waves
+
+```{r}
+time_type_plot_point <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  ggplot(aes(x = StartTime, y = fct_infreq(Type), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    theme_minimal() +
+    # facet_grid(vars(City)) +
+    ggtitle("Type over StartTime")
+
+ggplotly(time_type_plot_point)
+```
+```{r}
+time_type_plot_freq <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  ggplot(aes(x = StartTime, col = fct_infreq(City))) +
+    geom_freqpoly(alpha = 0.8, bins = 30) +
+    theme_minimal() +
+    facet_grid(vars(fct_infreq(Type))) +
+    ggtitle("Type over StartTime")
+
+ggplotly(time_type_plot_freq)
+```
+
+---
+multivariate Severity over StartTime
+---
+Severe events seem to increase since 2019, which might be Fog in Los Angeles
+
+```{r}
+time_severity_plot_point <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  ggplot(aes(x = StartTime, y = fct_infreq(Severity), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    theme_minimal() +
+    # facet_grid(vars(City)) +
+    ggtitle("Severity over StartTime")
+
+ggplotly(time_severity_plot_point)
+```
+```{r}
+time_severity_plot_freq <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  ggplot(aes(x = StartTime, col = fct_infreq(City))) +
+    geom_freqpoly(alpha = 0.8, bins = 30) +
+    theme_minimal() +
+    facet_grid(vars(fct_infreq(Severity))) +
+    ggtitle("Severity over StartTime")
+
+ggplotly(time_severity_plot_freq)
+```
+
+---
+multivariate Duration over Minute
+---
+can't quite find the reason why there is so much reporting at specific fixed minutes, might be automated but trigger is unknown, 
+but there is an interesting pattern here, might be because of recording method
+
+```{r}
+minute_severity_plot_freq <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  mutate(minute = minute(StartTime)) %>%
+  ggplot(aes(x = minute, y = as.numeric(Duration), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    theme_minimal() +
+    ggtitle("Severity over Minute")
+
+ggplotly(minute_severity_plot_freq)
+```
+
+---
+multivariate Type over Month
+---
+Houston has constant Rain and less Fog in Summer; Los Angeles has no Rain in Summer, but constant Fog and also Cold; New York has constant Rain and Fog, Snow in Winter, Cold also all Year; Seattle has less Rain in Summer, Fog and Snow in Winter
+
+-> I guess there is a better plot for this, but its good for now
+
+```{r}
+month_type_plot_freq <- weather %>%
+  mutate(month = month(StartTime, label = TRUE)) %>%
+  ggplot(aes(x = month, y = fct_infreq(Type), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Month")
+
+ggplotly(month_type_plot_freq)
+```
+
+---
+multivariate Type over Hour
+---
+Fog seems to have starting hours (and end): Houston 9 - 12 to 13 - 14, Los Angeles 14 - 16 to 15 - 19, New York 12 - 14 to 14 - 16, Seattle 13 - 16 to 15 - 18
+Rain in Houston is also more often starting in the second half of the day
+all others are constant across hours of day
+
+-> sync for local time zone to understand morning and evening time dependend events
+
+```{r}
+hour_type_plot_freq <- weather %>%
+  mutate(hour = hour(StartTime)) %>%
+  ggplot(aes(x = hour, y = fct_infreq(Type), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Hour")
+
+hour_type_plot_bar <- weather %>%
+  mutate(hour = hour(StartTime)) %>%
+  ggplot(aes(x = hour, fill = fct_infreq(Type))) +
+       geom_bar(position = position_dodge(preserve = "single")) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Start Hour")
+
+ggplotly(hour_type_plot_freq)
+ggplotly(hour_type_plot_bar)
+```
+```{r}
+hour_type_plot_freq <- weather %>%
+  mutate(hour = hour(EndTime)) %>%
+  ggplot(aes(x = hour, y = fct_infreq(Type), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Hour")
+
+hour_type_plot_bar <- weather %>%
+  mutate(hour = hour(EndTime)) %>%
+  ggplot(aes(x = hour, fill = fct_infreq(Type))) +
+       geom_bar(position = position_dodge(preserve = "single")) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over End Hour")
+
+ggplotly(hour_type_plot_freq)
+ggplotly(hour_type_plot_bar)
+```
+
+---
+multivariate Type over Year
+---
+Houston stable over years, Los Angeles increased Cold and Fog, New York mostly stable, but jump 2019 in Cold, Seattle little increase in Fog and decrease in Snow 
+
+```{r}
+year_type_plot_freq <- weather %>%
+  mutate(year = year(StartTime)) %>%
+  ggplot(aes(x = year, y = fct_infreq(Type), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Year")
+
+ggplotly(year_type_plot_freq)
+```
+```{r}
+year_type_plot_freq <- weather %>%
+  mutate(year = year(StartTime)) %>%
+  ggplot(aes(x = year, fill = fct_infreq(Type))) +
+    geom_bar(position = position_dodge(preserve = "single")) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Year")
+
+ggplotly(year_type_plot_freq)
+```
+
+
+
