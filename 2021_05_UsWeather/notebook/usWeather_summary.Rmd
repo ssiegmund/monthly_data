@@ -1,0 +1,225 @@
+---
+title: "summary for US weather event data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (i) summarize all insights and ideas from the other notebooks, as well as good exploratory plots
+
+---
+information
+---
+https://www.kaggle.com/sobhanmoosavi/us-weather-events
+https://smoosavi.org/datasets/lstw
+
+Moosavi, Sobhan, Mohammad Hossein Samavatian, Arnab Nandi, Srinivasan Parthasarathy, and Rajiv Ramnath. “Short and Long-term Pattern Discovery Over Large-Scale Geo-Spatiotemporal Data.” In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, ACM, 2019.
+
+Weather event is a spatiotemporal entity, where such an entity is associated with location and time. Following is the description of available weather event types:
+
+    Severe-Cold: The case of having extremely low temperature, with temperature below -23.7 degrees of Celsius.
+    Fog: The case where there is low visibility condition as a result of fog or haze.
+    Hail: The case of having solid precipitation including ice pellets and hail.
+    Rain: The case of having rain, ranging from light to heavy.
+    Snow: The case of having snow, ranging from light to heavy.
+    Storm: The extremely windy condition, where the wind speed is at least 60 km/h.
+    Other Precipitation: Any other type of precipitation which cannot be assigned to previously described event types.
+
+The weather data is provided in terms of a CSV file with the following attributes:
+      Attribute	        Description	                                                Nullable
+1	    EventId	          This is the identifier of a record	                        No
+2   	Type	            The type of an event; examples are rain and snow.	          No
+3	    Severity	        The severity of an event, wherever applicable.        	    Yes
+4	    StartTime (UTC)	  The start time of an event in UTC time zone.          	    No
+5	    EndTime (UTC)	    The end time of an event in UTC time zone.	                No
+6	    TimeZone	        The US-based timezone based on the location of an event     No
+                        (eastern, central, mountain, and pacific).	
+7	    LocationLat	      The latitude in GPS coordinate.	                            Yes
+8   	LocationLng	      The longitude in GPS coordinate.	                          Yes
+9	    AirportCode	      The airport station that a weather event is reported from.	Yes
+10	  City	            The city in address record.	                                Yes
+11	  County	          The county in address record.	                              Yes
+12	  State	            The state in address record.	                              Yes
+13	  ZipCode	          The zipcode in address record.	                            Yes
+
+---
+summary highlights
+---
+
+  (i) there are questions about the acquisition of the data, since there seems to be a pattern to record at specific times (minutes)
+  (i) Houston has constant Rain and less Fog in Summer; Los Angeles has no Rain in Summer, but constant Fog and also Cold; New York has constant Rain and Fog, Snow in Winter, Cold          also all Year; Seattle has less Rain in Summer, Fog and Snow in Winter
+  (i) there are starting times for Fog, mostly in the morning hours; Fog is also the longest events (on average)
+  (i) Houston stable over years, Los Angeles increased Cold and Fog, New York mostly stable, but jump 2019 in Cold, Seattle little increase in Fog and decrease in Snow
+
+---
+stories
+---
+
+  (!) compare 4 big cities which are all close to the coast but vary in significantly in longitude and latitude
+  (!) other possible subsets: 
+            variation across a state, 
+            type (one type distribution over country), 
+            severity (one type distribution over country), 
+            time range aggregation or reduction
+  (i) spatial and time tracking of events, like rain clouds moving acorss the land 
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(plotly) # make ggplots interactive
+library(lubridate) # functions to work with date-times and time-spans
+```
+
+---
+observations from clean nb
+---
+
+  (i) columns: EventId          chr, unique, not ordered, identifier in form of W-<number>
+               Type             chr, categorical, not ordered,
+               Severity         chr, categorical, ordered,
+               StartTime(UTC)   S3: POSIXct, continuous, ordered,
+               EndTime(UTC)     S3: POSIXct, continuous, ordered,
+               TimeZone         chr, categorical, not ordered,
+               LocationLat      dbl, continuous, (not) ordered, Lng + Lat is same as AirportCode and ZipCode, thus may be viewed as categorical
+               LocationLng      dbl, continuous, (not) ordered,
+               AirportCode      chr, categorical, not ordered, (selection) can be dropped, same information as Lng + Lat
+               City             chr, categorical, not ordered,
+               County           chr, categorical, not ordered, (selection) can be dropped, same information as city
+               State            chr, categorical, not ordered, (selection) can be dropped, same information as city
+               ZipCode          dbl, categorical, not ordered, (selection) can be dropped, same information as Lng + Lat
+  (i) size of data set is 6274206 rows !  -> may be split up data set to process it or only work with aggregated data
+    -> I decided to take only a small sub-population of the data set for this project = 4 big, popular cities along the coasts (reduced to 28094 rows)
+      (other possible subsets: variation across a state, by type, severity, long/lat, time range)
+  (i) duplicated rows: (selection) no exact duplicates in rows
+  (i) missing values: (full data) only a few missing values in City and ZipCode, more in ZipCode (8) as in City (4), but when in ZipCode then also in City (as if it is a subset)
+          but tricky to see since there are so much rows, might be single entries (-> may missing at random) or even all of them for this level 
+        imputation may be possible by hand or via cross check with other entries from the same location (only if missing at random)
+          but for now no imputation or dropping needed
+        (selection) no missing values
+  (i) it seems that airports close to each other report the same event, but may vary a little in StartTime and EndTime 
+      (selection only) City variable is the same information as ZipCode, County, State; 
+        also LocationLng&Lat are essentially location of reporting airport, thus redundant with AirportCode
+  (i) not much to clean, only converting chr which are categorical variables to fctr for more convenient use, 
+      and renaming to remove (UTC) to avoid confusion with the brackets, other wise Time and Gps variables have correct type
+      (selection) dropping variables with redundant information after reducing the data set to four distinct sub-populations 
+        by City and reports from one of the present Airports (with most reporting)
+
+---
+insights from describe uni
+---
+  
+  (i) City: most observations/rows in New York, least are in Los Angeles with less than half; likely because the defined events occurred less often 
+  (i) Type:
+      mostly rain in Houston, New York and Seattle, only in Los Angeles is more fog than rain, overall is rain three times as much as fog on second place, 
+      (there is a lot of other precipitation only in New York, but for only from KJRB airport, which is now filtered out)
+      snow mostly in New York and Seatlle, but cold in New York and Los Angeles, also overall not much, 
+      almost no storm and hail
+  (i) Severity:
+      mostly are light, twice as much as as moderate, which seems also be twice as much as severe, as well as heavy which is again the half
+      Los Angeles has more moderate, a lot more heavy in New York and Houston; Los Angeles has a lot severe compared to light -> because of missing rain?
+      (unsure what UNK is, best guess is "unkonwn", this is primarily in New York KJRB, which is now filtered out -> may be overlap with other precipitation from Type?)
+  (i) TimeZone: 
+      Los Angeles and Seattle both in Pacific, New York in Eastern, Houston in Central; 
+      Time zone information only relevant for knowing the day/night time since Time variables are in UTC for all observations
+  (i) Location Lng&Lat: same observation as for city, since we reduced to one airport per city
+      (we can see the four cities across the us map, as well as that the reports are mostly from two airports, only in Houston from 4 airports, 
+      was before reduction to one airport each)
+
+---
+insights from describe uni time
+---
+  
+  (i) Seattle: events come in waves within the year (peak in Nov, low in Jul) but stable across years, 
+  (i) Houston: events seem stable, spontaneous less in Jul and Nov, 
+  (i) York: stable but jump to more in 2018, stable across week and year
+  (i) Los Angeles: kind of stable but spike around 2017 and increase 2019 and 2020, over week spikes on monday and thursday, little wave with peak in Jan and low an Jun, 
+      distribution over hours shows significant peak at 15:00
+  (i) all: distribution over month days always low at first and last two, distribution over minutes have (different, but all at end of hour) enormous peaks for each city
+  (i) since human judgment seems to be involved, the duration has peaks at the full hours, you even can see the dips in the poisson like distribution
+  (i) duration stats: Seattle median 60 min, q3 120 min; New York median 47 min q3 72 min; Los Angeles median 60 min q3 120 min, Houston median 60 min q3 98 min; 
+      Los Angeles and Seattle seem similar in distribution
+
+---
+insights from describe multi
+---
+  
+  (i) spearman correlation is rang based and needs at least ordinal scale, thus Type and City are out
+      there is a small positive correlation between StartTime and Severity, since StartTime is mostly the increase in time over the years, thus Severity might gone up a little
+  (i) in Severity there are some gaps eg Rain and Snow have no Severe, where Fog has only Severe and Moderate, Cold and Storm come only in Severe, Hail only has Other 
+      these gaps make things hard to compare 
+      in Light Rain is most, but already in Moderate there is more Fog (because of Los Angeles)
+  (i) Fog seems to be longer than Rain, especially in Houston and Los Angeles; Los Angeles has no Snow but longer Cold periods (comparable to New York); Snow longest in New York and        Seattle, but Seattle has less Cold, overall quite some severe fog overall 
+  (i) Light and Moderate events are the most, there are less Severe events but there are also as long;
+      Severe events in Houston and Seattle are quite long, Moderate is longer than usual in Los Angeles; may be most are Fog
+
+```{r}
+type_severity_plot_point <- weather %>%
+  ggplot(aes(x = fct_infreq(Type), y = fct_infreq(Severity), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    theme_minimal() +
+    ggtitle("Severity over Type")
+  
+ggplotly(type_severity_plot_point)  
+```
+```{r}
+duration_type_plot_box <- weather %>%
+  filter(as.numeric(Duration) < 600) %>%
+  ggplot(aes(x = fct_infreq(Type), y = as.numeric(Duration), col = fct_infreq(City))) +
+    geom_boxplot() +
+    theme_minimal() +
+    facet_grid(rows = vars(City)) +
+    # coord_flip() +
+    ggtitle("Duration over Type")
+
+ggplotly(duration_type_plot_box)
+```
+
+---
+insights from decribe multi time
+---
+  
+  (i) we can see the waves in the frequency of the events, but it seems that the duration is stable / constant, except for Los Angeles;
+      may be the events are a little longer over the years on average
+  (i) Snow comes in seasons in New York and Seattle of course, but cold seem to increase in New York and Los Angeles since 2019 and not stick to winter season;
+      Fog is mostly in Los Angeles and also increasing since 2019, 
+      Rain is present is all cities all the year, Seattle seems to have waves / seasons of Rain, and Los Angeles hast most year almost no Rain with spikes, 
+      funny is that in overall plot per city the snow seasons in New York did not really show, but in Seattle they really do, maybe since they sync with rain waves
+  (i) Severe events seem to increase since 2019, which might be Fog in Los Angeles
+  (i) can't quite find the reason why there is so much reporting at specific fixed minutes, might be automated but trigger is unknown, 
+      but there is an interesting pattern here, might be because of recording method
+  (i) Houston has constant Rain and less Fog in Summer; Los Angeles has no Rain in Summer, but constant Fog and also Cold; New York has constant Rain and Fog, Snow in Winter, Cold          also all Year; Seattle has less Rain in Summer, Fog and Snow in Winter
+  (i) Fog seems to have starting hours (and end): Houston 9 - 12 to 13 - 14, Los Angeles 14 - 16 to 15 - 19, New York 12 - 14 to 14 - 16, Seattle 13 - 16 to 15 - 18
+      all others are constant across hours of day
+  (i) Houston stable over years, Los Angeles increased Cold and Fog, New York mostly stable, but jump 2019 in Cold, Seattle little increase in Fog and decrease in Snow
+
+```{r}
+month_type_plot_point <- weather %>%
+  mutate(month = month(StartTime, label = TRUE)) %>%
+  ggplot(aes(x = month, y = fct_infreq(Type), col = fct_infreq(City))) +
+    geom_jitter(alpha = 0.2, size = 0.5) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Month")
+
+ggplotly(month_type_plot_point)
+```
+```{r}
+year_type_plot_freq <- weather %>%
+  mutate(year = year(StartTime)) %>%
+  ggplot(aes(x = year, fill = fct_infreq(Type))) +
+    geom_bar(position = position_dodge(preserve = "single")) +
+    facet_grid(vars(City)) +
+    theme_minimal() +
+    ggtitle("Type over Year")
+
+ggplotly(year_type_plot_freq)
+```
+
+
+
+
+

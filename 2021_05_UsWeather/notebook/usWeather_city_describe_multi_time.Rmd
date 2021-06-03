@@ -203,7 +203,7 @@ Houston has constant Rain and less Fog in Summer; Los Angeles has no Rain in Sum
 -> I guess there is a better plot for this, but its good for now
 
 ```{r}
-month_type_plot_freq <- weather %>%
+month_type_plot_point <- weather %>%
   mutate(month = month(StartTime, label = TRUE)) %>%
   ggplot(aes(x = month, y = fct_infreq(Type), col = fct_infreq(City))) +
     geom_jitter(alpha = 0.2, size = 0.5) +
@@ -211,7 +211,7 @@ month_type_plot_freq <- weather %>%
     theme_minimal() +
     ggtitle("Type over Month")
 
-ggplotly(month_type_plot_freq)
+ggplotly(month_type_plot_point)
 ```
 
 ---
