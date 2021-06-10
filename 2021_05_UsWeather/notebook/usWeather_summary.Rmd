@@ -75,6 +75,16 @@ library(lubridate) # functions to work with date-times and time-spans
 ```
 
 ---
+overview
+---
+```{r}
+head(weather)
+```
+```{r}
+summary(weather)
+```
+
+---
 observations from clean nb
 ---
 

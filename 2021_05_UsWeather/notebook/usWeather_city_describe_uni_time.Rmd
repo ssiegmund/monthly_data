@@ -258,6 +258,13 @@ duration_point <- weather %>%
 ggplotly(duration_point)
 ```
 
+```{r}
+library(dlookr)
+
+weather %>% 
+  mutate(Duration = as.numeric(Duration)) %>%
+  plot_normality(Duration)
+```
 
 
 
