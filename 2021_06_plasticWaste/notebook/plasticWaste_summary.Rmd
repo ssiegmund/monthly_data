@@ -1,0 +1,72 @@
+---
+title: "summary for plastic waste makers index data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (i) summarize all insights and ideas from the other notebooks, as well as good exploratory plots
+  
+---
+information
+---
+
+name: makeovermonday_2021w22
+link: https://data.world/makeovermonday/2021w22
+title: 2021/W22: The Plastic Waste Makers Index
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/)
+  
+---
+summary highlights
+---
+  
+
+
+---
+stories
+---
+
+
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(plotly) # make ggplots interactive
+```
+
+---
+overview
+---
+```{r}
+head(plastic)
+```
+
+```{r}
+summary(plastic)
+```
+
+---
+observations from clean nb
+---
+
+
+
+---
+insights from describe uni
+---
+
+
+
+---
+insights from describe multi
+---
+
+
+
+
+
+

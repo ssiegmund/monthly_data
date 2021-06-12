@@ -1,0 +1,69 @@
+---
+title: "cleaning for plastic waste makers index data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) initial look at data to get a basic understanding and gather todos
+  (-) tidy up and cleaning of data set
+  (-) save pre-processed data set
+
+todos:
+  (-) ...
+
+---
+information
+---
+
+name: makeovermonday_2021w22
+link: https://data.world/makeovermonday/2021w22
+title: 2021/W22: The Plastic Waste Makers Index
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/)
+
+---
+observations
+---
+
+  (i) columns: 
+
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(lubridate) # functions to work with date-times and time-spans
+library(scrubr) # like dplyr but specifically for occurrence data
+```
+
+---
+import data
+---
+```{r}
+plastic <- read_csv(file = '../data/plastic_waste_makers_index.csv')
+```
+
+---
+first look at data
+---
+```{r}
+head(plastic, 25)
+```
+```{r}
+tail(plastic)
+```
+```{r}
+summary(plastic)
+```
+
+---
+missing values
+---
+
+
+
+
+
+

@@ -1,0 +1,79 @@
+{
+    "name": "makeovermonday_2021w22",
+    "title": "2021/W22: The Plastic Waste Makers Index",
+    "description": "Which companies produce the most plastic waste?\n\n---\n{\"editor\":\"simple\"}\n---\n# Original Visualization\n![](https://media.data.world/tTKgS2tST2sohyodmEgc_PLASTIC%20WASTE%20MAKERS.png)\n\n​\n\n# Resources\nOriginal Article: [The Plastic Waste Makers Index](https://cdn.minderoo.org/content/uploads/2021/05/18065501/20210518-Plastic-Waste-Makers-Index.pdf)\nData Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/)",
+    "homepage": "https://data.world/makeovermonday/2021w22",
+    "resources": [
+        {
+            "name": "plastic_waste_makers_index",
+            "schema": {
+                "fields": [
+                    {
+                        "name": "rank",
+                        "title": "Rank",
+                        "type": "integer",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#integer",
+                        "dwSourceId": "rank"
+                    },
+                    {
+                        "name": "polymer_producer",
+                        "title": "Polymer Producer",
+                        "type": "string",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#string",
+                        "dwSourceId": "polymer_producer"
+                    },
+                    {
+                        "name": "no_of_assets",
+                        "title": "No. of assets",
+                        "type": "integer",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#integer",
+                        "dwSourceId": "no_of_assets"
+                    },
+                    {
+                        "name": "production_of_in_scope_polymers",
+                        "title": "Production of in-scope polymers",
+                        "type": "number",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#decimal",
+                        "dwSourceId": "production_of_in_scope_polymers"
+                    },
+                    {
+                        "name": "flexible_format_contribution_to_sup_waste",
+                        "title": "Flexible format contribution to SUP waste",
+                        "type": "number",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#decimal",
+                        "dwSourceId": "flexible_format_contribution_to_sup_waste"
+                    },
+                    {
+                        "name": "rigid_format_contribution_to_sup_waste",
+                        "title": "Rigid format contribution to SUP waste",
+                        "type": "number",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#decimal",
+                        "dwSourceId": "rigid_format_contribution_to_sup_waste"
+                    },
+                    {
+                        "name": "total_contribution_to_sup_waste",
+                        "title": "Total contribution to SUP waste",
+                        "type": "number",
+                        "rdfType": "http://www.w3.org/2001/XMLSchema#decimal",
+                        "dwSourceId": "total_contribution_to_sup_waste"
+                    }
+                ]
+            },
+            "path": "data/plastic_waste_makers_index.csv",
+            "format": "csv"
+        },
+        {
+            "name": "original/Plastic Waste Makers Index.xlsx",
+            "path": "original/Plastic Waste Makers Index.xlsx",
+            "format": "xlsx",
+            "mediatype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "bytes": 13700
+        }
+    ],
+    "keywords": [
+        "makeover monday",
+        "environment",
+        "waste",
+        "plastic"
+    ]
+}
