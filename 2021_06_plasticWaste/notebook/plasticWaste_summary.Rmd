@@ -17,6 +17,16 @@ name: makeovermonday_2021w22
 link: https://data.world/makeovermonday/2021w22
 title: 2021/W22: The Plastic Waste Makers Index
 Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/)
+
+
+---
+domain information 
+---
+
+ (i) Production of single-use plastic (SUP) and contribution to single-use plastic waste is estimated and calculated in million metric tons in 2019.
+ (i) Rigid packaging is packaging that features heavier and often stronger materials than flexible packaging. Forms of rigid packaging materials include but are not limited to: glass,      hard plastics, cardboard, metal, and so on. Rigid packaging supplies are usually more expensive than their flexible alternatives and most have significantly higher carbon              footprints than flexible packaging. see https://www.industrialpackaging.com/blog/flexible-vs-rigid-packaging
+ (i) Flexible packaging includes all malleable packaging. Some common examples of flexible packaging include shrink film, stretch film, flexible pouches, seal bands, blister or skin        packs, and clamshells. In reality, flexible packaging includes any protective packaging made from materials including plastic, paperboard, paper, foil, wax-coated paperboard, and      similar materials, or combinations of these materials. see https://www.industrialpackaging.com/blog/flexible-vs-rigid-packaging
+ (i) In-scope polymersSingle-use plastics can, in theory, be produced from over a dozen polymer families. However, in 2019, we estimate that close to 90 per cent of all single-use          plastics by mass were produced from just five polymers: polypropylene (PP), high-density polyethylene (HDPE), low-density polyethylene (LDPE), linear low-density polyethylene          (LLDPE), and polyethylene terephthalate resin (PET) (Figure M2). see https://cdn.minderoo.org/content/uploads/2021/05/18065501/20210518-Plastic-Waste-Makers-Index.pdf
   
 ---
 summary highlights
@@ -53,13 +63,106 @@ summary(plastic)
 observations from clean nb
 ---
 
-
+  (i) columns: rank                                         numeric, ordered, unique, can serve as identifier, rank of producer according to index
+               polymer_producer                             string, unique identifier, name of producer
+               no_of_assets                                 numeric, metric, number of assets of the producer
+               production_of_in_scope_polymers              numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis
+               flexible_format_contribution_to_sup_waste    numeric, metric in million metric tons, flexible form of contribution to sup waste
+               rigid_format_contribution_to_sup_waste       numeric, metric in million metric tons, rigid form of contribution to sup waste
+               total_contribution_to_sup_waste              numeric, metric in million metric tons, total contribution is the sum of flexible and rigid
+  (i) no missing values at all, also it is a very small dataset
+  (i) no duplicated rows
+  (i) no changes were made to data set
 
 ---
 insights from describe uni
 ---
 
+  (i) no_of_assets is poisson distributed, where most producer only have up to 9 (median = 6) assets, some have up to 29 (upper fence = 26), and only a few (outliers) are above that        with up to 82 assets
+  (i) production_of_in_scope_polymers is poisson distributed, likes very similar to no_of_assets, median is 0.9, upper fence is 3.4, max is 11.6
+      -> might correlate with no_of_assets?
+  (i) flexible_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.7
+  (i) rigid_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.5,
+      very similar to flexible_format_contribution_to_sup_waste, but with less outliers
+  (i) rigid_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets (again), median is 0.45, upper fence is 1.9, max is 5.9
+      is sum of flexible_form + rigid_form
+  (i) ration of sup_waste to produced polymers is between min 0.3 and max 1.0 and has median 0.5, most data lies between 0.4 and 0.6, but there is a high spike at 1.0 (with count 15)
+  (i) comparing rigid_format and flexible_format shows that up to the upper fence 1.1, the distribution is similar, but there are more bigger (>3) outliers in flexible
 
+```{r}
+name = 'total_contribution_to_sup_waste'
+df <- plastic %>% rename(value = total_contribution_to_sup_waste) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+```{r}
+name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
+
+boxplot <- df %>%
+  ggplot(aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value, fill = name)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1, alpha = 0.5, position = "identity") +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1, dotsize = 0.23, binwidth = 0.1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value, colour = name)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line(alpha = 0.5) +
+    coord_flip() +
+    theme_minimal() 
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
 
 ---
 insights from describe multi

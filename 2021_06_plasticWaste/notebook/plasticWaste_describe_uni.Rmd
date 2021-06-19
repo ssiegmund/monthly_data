@@ -1,0 +1,500 @@
+---
+title: "describe and visualize plastic waste makers index data - univariate"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) describe & visualize single variables (univariate)
+  (-) gather interesting observations for further investigation
+  (-) gather possible new features for extraction
+  
+todos:
+  (-) ...
+  
+---
+information
+---
+
+name: makeovermonday_2021w22
+link: https://data.world/makeovermonday/2021w22
+title: 2021/W22: The Plastic Waste Makers Index
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/) from 2019
+  
+---
+insights 
+---
+
+  (i) no_of_assets is poisson distributed, where most producer only have up to 9 (median = 6) assets, some have up to 29 (upper fence = 26), and only a few (outliers) are above that        with up to 82 assets
+  (i) production_of_in_scope_polymers is poisson distributed, likes very similar to no_of_assets, median is 0.9, upper fence is 3.4, max is 11.6
+      -> might correlate with no_of_assets?
+  (i) flexible_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.7
+  (i) rigid_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.5,
+      very similar to flexible_format_contribution_to_sup_waste, but with less outliers
+  (i) rigid_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets (again), median is 0.45, upper fence is 1.9, max is 5.9
+      is sum of flexible_form + rigid_form
+  (i) ration of sup_waste to produced polymers is between min 0.3 and max 1.0 and has median 0.5, most data lies between 0.4 and 0.6, but there is a high spike at 1.0 (with count 15)
+  (i) comparing rigid_format and flexible_format shows that up to the upper fence 1.1, the distribution is similar, but there are more bigger (>3) outliers in flexible
+   
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+
+library(patchwork) # make it ridiculously simple to combine separate ggplots into the same graphic p1 + p2 or (p1 | p2 | p3) / p4
+library(dlookr) # collection of tools that support data diagnosis, exploration, and transformation.
+```
+
+---
+overview
+---
+```{r}
+head(plastic)
+```
+```{r}
+summary(plastic)
+```
+
+---
+univariate no_of_assets
+---
+no_of_assets is poisson distributed, where most producer only have up to 9 (median = 6) assets, some have up to 29 (upper fence = 26), and only a few (outliers) are above that with up to 82 assets
+
+```{r}
+name = 'no_of_assets'
+df <- plastic %>% rename(value = no_of_assets) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+---
+univariate production_of_in_scope_polymers
+---
+production_of_in_scope_polymers is poisson distributed, likes very similar to no_of_assets, median is 0.9, upper fence is 3.4, max is 11.6
+might correlate with no_of_assets?
+
+```{r}
+name = 'production_of_in_scope_polymers'
+df <- plastic %>% rename(value = production_of_in_scope_polymers) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+---
+univariate flexible_format_contribution_to_sup_waste
+--- 
+flexible_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.7
+
+```{r}
+name = 'flexible_format_contribution_to_sup_waste'
+df <- plastic %>% rename(value = flexible_format_contribution_to_sup_waste) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+---
+univariate rigid_format_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.5,
+very similar to flexible_format_contribution_to_sup_waste, but with less outliers
+
+```{r}
+name = 'rigid_format_contribution_to_sup_waste'
+df <- plastic %>% rename(value = rigid_format_contribution_to_sup_waste) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+---
+univariate total_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets (again), median is 0.45, upper fence is 1.9, max is 5.9
+is sum of flexible_form + rigid_form
+
+```{r}
+name = 'total_contribution_to_sup_waste'
+df <- plastic %>% rename(value = total_contribution_to_sup_waste) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+---
+univariate total_waste_div_production
+---
+ration of sup_waste to produced polymers is between min 0.3 and max 1.0 and has median 0.5, most data lies between 0.4 and 0.6, but there is a high spike at 1.0 (with count 15)
+
+```{r}
+name = 'total_waste_div_production'
+df <- plastic %>% rename(value = total_waste_div_production) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.01) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+---
+compare rigid_format and flexible_format 
+---
+comparing rigid_format and flexible_format shows that up to the upper fence 1.1, the distribution is similar, but there are more bigger (>3) outliers in flexible
+
+```{r}
+name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
+
+boxplot <- df %>%
+  ggplot(aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = value, fill = name)) +
+    # geom_density() +
+    geom_histogram(binwidth = 0.1, alpha = 0.5, position = "identity") +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1, dotsize = 0.23, binwidth = 0.1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = value, colour = name)) +
+    geom_qq(alpha = 0.5) +
+    geom_qq_line(alpha = 0.5) +
+    coord_flip() +
+    theme_minimal() 
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+
+fig
+```
+
+
+
+---
+annex: old experimental plots
+---
+```{r}
+assets_plot_hist <- plastic %>%
+  ggplot(aes(x = no_of_assets)) +
+    geom_histogram(binwidth = 1) +
+    theme_minimal() +
+    ggtitle("Distribution of no_of_assets")
+
+ggplotly(assets_plot_hist)
+```
+```{r}
+assets_plot_box <- plastic %>%
+  ggplot(aes(x = 1, y = no_of_assets)) +
+    geom_boxplot() +
+    geom_jitter(alpha = 0.5, width = 0.15) +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle("Distribution of no_of_assets")
+
+ggplotly(assets_plot_box)
+```
+```{r}
+assets_plot_box <- plastic %>%
+  mutate( x = 1 ) %>%
+  ggplot(aes(y = no_of_assets, x=1)) +
+    geom_boxplot() +
+    geom_dotplot(binaxis='y', stackdir='center', binwidth = 1) +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle("Distribution of no_of_assets")
+
+assets_plot_box
+```
+```{r}
+assets_plot_density <- plastic %>%
+  ggplot(aes(x = no_of_assets)) +
+    geom_histogram(aes(y=..density..)) +
+    geom_density() +
+    theme_minimal() +
+    ggtitle("Distribution of no_of_assets")
+
+ggplotly(assets_plot_density)
+```
+```{r}
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+assets_plot_dot <- plastic %>%
+  ggplot(aes(x = no_of_assets)) +
+    geom_histogram(binwidth = 1) +
+    geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) +
+    ggtitle("Distribution of no_of_assets")
+
+assets_plot_dot
+```
+```{r}
+name = 'no_of_assets'
+df <- plastic %>% rename(y = no_of_assets) %>% select(y)
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = y)) +
+    geom_qq() +
+    geom_qq_line() +
+    theme_minimal() +
+    ggtitle(paste("qq plot for", name, sep=" "))
+plot_qq <- ggplotly(plot_qq)
+
+# Use fitdistr from MASS to estimate distribution params
+# https://rdrr.io/cran/MASS/man/fitdistr.html
+params <- as.list(MASS::fitdistr(df$y, "t")$estimate)
+plot_qq_fit <- df %>%
+  ggplot(aes(sample = y)) +
+    geom_qq(distribution = qt, dparams = params["df"]) +
+    geom_qq_line(distribution = qt, dparams = params["df"]) +
+    theme_minimal() +
+    ggtitle(paste("qq plot for", name, "without left and with fitdistr right", sep=" "))
+plot_qq_fit <- ggplotly(plot_qq_fit)
+
+# https://plotly.com/r/subplots/
+subplot(plot_qq, plot_qq_fit)
+```
+```{r}
+name = 'production_of_in_scope_polymers'
+df <- plastic %>% rename(y = production_of_in_scope_polymers) %>% select(y)
+
+boxplot <- df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+dotplot <- df %>%
+  ggplot(aes(x = y)) +
+    # geom_density() +
+    # geom_histogram(binwidth = 1) +
+    geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 0.1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+plot_qq <- df %>%
+  ggplot(aes(sample = y)) +
+    geom_qq() +
+    geom_qq_line() +
+    theme_minimal() 
+
+# Use fitdistr from MASS to estimate distribution params
+params <- as.list(MASS::fitdistr(df$y, "t")$estimate)
+plot_qq_fit <- df %>%
+  ggplot(aes(sample = y)) +
+    geom_qq(distribution = qt, dparams = params["df"]) +
+    geom_qq_line(distribution = qt, dparams = params["df"]) +
+    theme_minimal() 
+
+# https://plotly.com/r/subplots/
+s1 <- subplot(dotplot, boxplot, nrows = 2, margin = 0.03, heights = c(0.75, 0.25))
+s2 <- subplot(plot_qq, plot_qq_fit)
+fig <- subplot(s1, s2, nrows = 2, margin = 0.03, heights = c(0.6, 0.4)) 
+
+fig
+```
+
+
+

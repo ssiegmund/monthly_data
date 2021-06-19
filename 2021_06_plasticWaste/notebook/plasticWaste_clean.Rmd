@@ -7,9 +7,9 @@ output: html_notebook
 purpose of notebook
 ---
 
-  (-) initial look at data to get a basic understanding and gather todos
-  (-) tidy up and cleaning of data set
-  (-) save pre-processed data set
+  (/) initial look at data to get a basic understanding and gather todos
+  (/) tidy up and cleaning of data set
+  (x) save pre-processed data set
 
 todos:
   (-) ...
@@ -21,14 +21,24 @@ information
 name: makeovermonday_2021w22
 link: https://data.world/makeovermonday/2021w22
 title: 2021/W22: The Plastic Waste Makers Index
-Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/)
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/) from 2019
 
 ---
 observations
 ---
-
-  (i) columns: 
-
+  
+  (i) columns: rank                                         numeric, ordered, unique, can serve as identifier, rank of producer according to index
+               polymer_producer                             string, unique identifier, name of producer
+               no_of_assets                                 numeric, metric, number of assets of the producer
+               production_of_in_scope_polymers              numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis
+               flexible_format_contribution_to_sup_waste    numeric, metric in million metric tons, flexible form of contribution to sup waste
+               rigid_format_contribution_to_sup_waste       numeric, metric in million metric tons, rigid form of contribution to sup waste
+               total_contribution_to_sup_waste              numeric, metric in million metric tons, total contribution is the sum of flexible and rigid
+  (i) no missing values at all, also it is a very small dataset
+  (i) no duplicated rows
+  (i) no changes were made to data set
+  (i) added a variable which gives the percentage of the sup_waste from the produced polymers
+               
 ---
 load packages
 ---
@@ -61,6 +71,78 @@ summary(plastic)
 ---
 missing values
 ---
+no missing values at all, also it is a very small dataset
+
+```{r}
+#create data frame with information on whether the value in each cell is missing
+missing_by_column <- plastic %>%
+  is.na %>% # check is each cell is na
+  as_tibble %>% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = "",
+                  labels = c("present", "missing")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=8)) +
+  labs(x = "vairables in dataset",
+       y = "rows / observations")
+```
+
+---
+duplicated rows
+---
+no duplicated rows
+
+```{r}
+# get row number of duplicated rows
+duplicated_rows = tibble(duplicated = duplicated(plastic), row = 1:nrow(plastic)) %>%
+  filter(duplicated == T)
+
+# plot duplicated rows as black lines
+ggplot(duplicated_rows, aes(xintercept = row)) +
+  geom_vline(aes(xintercept = row)) + # plot a black line for each duplicated row
+  ggtitle("indexes of duplicated rows") + # add title
+  coord_flip() + # flip x and y axis
+  scale_x_reverse() # reverse x axis
+```
+
+---
+cleaning
+---
+
+nothing to clean 
+
+---
+additional variables
+---
+added a variable which gives the percentage of the sup_waste from the produced polymers
+
+```{r}
+plastic <- plastic %>%
+  mutate(total_waste_div_production = round(total_contribution_to_sup_waste / production_of_in_scope_polymers ,2))
+```
+
+---
+save processed data
+---
+
+no changes were made to data set
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
