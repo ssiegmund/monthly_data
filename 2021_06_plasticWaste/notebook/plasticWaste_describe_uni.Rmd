@@ -7,9 +7,9 @@ output: html_notebook
 purpose of notebook
 ---
 
-  (-) describe & visualize single variables (univariate)
-  (-) gather interesting observations for further investigation
-  (-) gather possible new features for extraction
+  (/) describe & visualize single variables (univariate)
+  (/) gather interesting observations for further investigation
+  (/) gather possible new features for extraction
   
 todos:
   (-) ...
@@ -66,6 +66,7 @@ univariate no_of_assets
 no_of_assets is poisson distributed, where most producer only have up to 9 (median = 6) assets, some have up to 29 (upper fence = 26), and only a few (outliers) are above that with up to 82 assets
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'no_of_assets'
 df <- plastic %>% rename(value = no_of_assets) %>% select(value)
 
@@ -95,7 +96,7 @@ plot_qq <- df %>%
     geom_qq_line() +
     coord_flip() +
     theme_minimal()
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = name))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -110,6 +111,7 @@ production_of_in_scope_polymers is poisson distributed, likes very similar to no
 might correlate with no_of_assets?
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'production_of_in_scope_polymers'
 df <- plastic %>% rename(value = production_of_in_scope_polymers) %>% select(value)
 
@@ -139,7 +141,7 @@ plot_qq <- df %>%
     geom_qq_line() +
     coord_flip() +
     theme_minimal()
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = name))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -153,6 +155,7 @@ univariate flexible_format_contribution_to_sup_waste
 flexible_format_contribution_to_sup_waste is poisson distributed, likes very similar to no_of_assets, median is 0.2, upper fence is 1.1, max is 4.7
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'flexible_format_contribution_to_sup_waste'
 df <- plastic %>% rename(value = flexible_format_contribution_to_sup_waste) %>% select(value)
 
@@ -182,7 +185,7 @@ plot_qq <- df %>%
     geom_qq_line() +
     coord_flip() +
     theme_minimal()
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = name))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -197,6 +200,7 @@ rigid_format_contribution_to_sup_waste is poisson distributed, likes very simila
 very similar to flexible_format_contribution_to_sup_waste, but with less outliers
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'rigid_format_contribution_to_sup_waste'
 df <- plastic %>% rename(value = rigid_format_contribution_to_sup_waste) %>% select(value)
 
@@ -226,7 +230,7 @@ plot_qq <- df %>%
     geom_qq_line() +
     coord_flip() +
     theme_minimal()
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = name))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -241,6 +245,7 @@ rigid_format_contribution_to_sup_waste is poisson distributed, likes very simila
 is sum of flexible_form + rigid_form
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'total_contribution_to_sup_waste'
 df <- plastic %>% rename(value = total_contribution_to_sup_waste) %>% select(value)
 
@@ -270,7 +275,7 @@ plot_qq <- df %>%
     geom_qq_line() +
     coord_flip() +
     theme_minimal()
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = name))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -284,6 +289,7 @@ univariate total_waste_div_production
 ration of sup_waste to produced polymers is between min 0.3 and max 1.0 and has median 0.5, most data lies between 0.4 and 0.6, but there is a high spike at 1.0 (with count 15)
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'total_waste_div_production'
 df <- plastic %>% rename(value = total_waste_div_production) %>% select(value)
 
@@ -313,7 +319,7 @@ plot_qq <- df %>%
     geom_qq_line() +
     coord_flip() +
     theme_minimal()
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = name))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -327,6 +333,7 @@ compare rigid_format and flexible_format
 comparing rigid_format and flexible_format shows that up to the upper fence 1.1, the distribution is similar, but there are more bigger (>3) outliers in flexible
 
 ```{r}
+# two variables, both continuous x, compare distributions
 name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
 df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
 
@@ -356,7 +363,7 @@ plot_qq <- df %>%
     geom_qq_line(alpha = 0.5) +
     coord_flip() +
     theme_minimal() 
-plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(title = paste(name[1], "&", name[2], sep=" ")))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
@@ -367,7 +374,7 @@ fig
 
 
 ---
-annex: old experimental plots
+appendix: old experimental plots
 ---
 ```{r}
 assets_plot_hist <- plastic %>%

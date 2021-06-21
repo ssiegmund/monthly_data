@@ -8,10 +8,10 @@ output: html_notebook
 purpose of notebook
 ---
 
-  (-) describe & visualize relationship between variables (multivariate)
-  (-) correlation plots 
-  (-) gather interesting observations for further investigation
-  (-) gather possible new features for extraction
+  (/) describe & visualize relationship between variables (multivariate)
+  (/) correlation plots 
+  (/) gather interesting observations for further investigation
+  (/) gather possible new features for extraction
   
 todos:
   (-) ...

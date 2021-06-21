@@ -1,0 +1,1277 @@
+---
+title: "describe and visualize plastic waste makers index data - multivariate"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) describe & visualize relationship between variables (multivariate)
+  (-) gather interesting observations for further investigation
+  (-) gather possible new features for extraction
+  
+todos:
+  (-) ...
+  
+---
+information
+---
+
+name: makeovermonday_2021w22
+link: https://data.world/makeovermonday/2021w22
+title: 2021/W22: The Plastic Waste Makers Index
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/) from 2019
+  
+---
+insights 
+---
+
+  (!) are there two different sub-populations in the data? like two different types of producers with different behavior regarding rigid_format and flexible_format production 
+      -> may be there are producers with only rigid format
+      -> if group is identified, then add a variable to tag them and make the plots again with group coloring, I wonder if there are also the producers with                                   total_waste_div_production ration 1.0 
+
+  (i) no_of_assets over rank increases only slowly until rank 25, afterwards it starts to increase strongly (compared to before), this is where the outliers come in from no_of_assets       distribution, but most assets in not rank 1
+  (i) production_of_in_scope_polymers over rank starts to increase again substantially after about rank 25
+  (i) flexible_format_contribution_to_sup_waste over rank starts to increase again substantially after about rank 25, there are a couple of producers above rank 25 which do not            produce flexible_format (like outliers), the spread is very high towards the end
+  (i) rigid_format_contribution_to_sup_waste over rank starts to increase again substantially after about rank 25, but compared to flexible_format the spread is not as high (except        for one outlier, which is also really low on flexible format), but overall there is less production in rigid_format
+  (i) total_contribution_to_sup_waste over rank, seems to be oddly stepped, but that is because the rank is directly determined by the total_contribution (there are not independent),       again the steep increase starts at rank 25 
+  (i) low no_of_assets seems to also imply low production_of_in_scope_polymers, which is for like 80% of the producers the case, but after no_of_assets bigger 20, there is in almost       linear increase of production with no_of_assets
+  (i) total_waste_div_production over rank ranges from 0.3 to 1.0 and is in general like 0.5 (but this we already saw in univariate analysis), the spread is high across all rank, but       there is like a very empty band between 0.6 and 0.9 where only 7 producers are
+  (i) flexible_format_contribution_to_sup_waste over no_of_assets shows similar picture as production over assets, but with wider spread for assets > 20
+  (i) rigid_format_contribution_to_sup_waste over no_of_assets is surprisingly different from flexible_format over assets, as it is in the beginning more spread toward higher               contribution, but after assets > 20, there seems to be a threshold at 1.4, where only a few outliers go beyond, though it is rising until this (fast reached) point
+  (i) total_contribution_to_sup_waste over no_of_assets does again look similar to flexible_format over assets, since total = flexible + rigid, this means that above 20 assets,             flexible is dominant, but below there is a wider spread due to rigid_format
+  (i) total_waste_div_production over no_of_assets show at low number of assets (<20) a wide spread ranging from 0.3 to 1.0, but above there seems to be stable at around 0.45 ratio
+      -> maybe there are two different sub-populations behind?
+  (i) with a bigger production_of_in_scope_polymers comes relatively linearly a bigger flexible_format_contribution_to_sup_waste, but most producer have a smaller 3
+  (i) rigid_format_contribution_to_sup_waste over production_of_in_scope_polymers shows again the cap in rigid_format part not growing beyond 1.3 with production, but also a second         tendency in the beginning where a linear behavior of strong growing rigid_format suggest that there might be two sub-populations
+  (i) total_contribution_to_sup_waste over production_of_in_scope_polymers looks pretty much linear, with a bulk of data points below production < 3
+  (i) in total_waste_div_production over production_of_in_scope_polymers below production < 3 there are two cluster around 0.45 and 1.0, beyond production > 3 it seems to be stable        at 0.5
+  (i) rigid_format_contribution_to_sup_waste over flexible_format_contribution_to_sup_waste shows the previously observed phänomena, i) with growing flexible_format, rigid_format          also start to grow a little but then stays at around 1.2, ii) there is one group that only grows in rigid_format and produce almost no flexible_format
+  (i) flexible_format_contribution_to_sup_waste over total_contribution_to_sup_waste shows an almost linear increase in flexible_format with total_contribution, but here again we          have a group with almost no flexible_format (which means that they only produce rigid_format)
+  (i) total_waste_div_production over flexible_format_contribution_to_sup_waste shows agani tqwo clusters one around total_waste_div 1.0 and the other around 0.45, and that the            higher regions of flexible_format are only ovvupied by a few producers with a ration around 0.47 
+  (i) rigid_format_contribution_to_sup_waste over total_contribution_to_sup_waste only at the beginning rigid format is growing with total_contribution, but it is not really growing       beyond 1.3, for the rigid_format only group, there there is a almost linear group
+  (i) most data points lie in the range total_waste_div < 0.7 and rigid_format < 0.5, for the outliers there are two groups one around ratio 1.0 and one with lower ratio around 0.5
+  (i) total_waste_div_production over total_contribution_to_sup_waste shows again two groups around 1.0 and 0.45 and a concentration under 0.75 total_contribution
+  
+---
+load packages
+---
+```{r load packages, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+library(lubridate) # functions to work with date-times and time-spans
+
+library(corrplot) # correlation plots
+library(ggmosaic) # geom_mosaic() mosaic plots for categorical data
+library(ggparallel) # parallel coordinate plots for categorical data
+library(ggExtra) # collection of functions and layers to enhance ggplot2, like ggMarginal
+```
+
+---
+overview
+---
+```{r}
+head(plastic)
+```
+```{r}
+summary(plastic)
+```
+
+---
+multivariate rank + no_of_assets
+---
+no_of_assets over rank increases only slowly until rank 25, afterwards it starts to increase strongly (compared to before), this is where the outliers come in from no_of_assets distribution, but most assets in not rank 1
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'no_of_assets')
+df <- plastic %>% rename(x = rank, y = no_of_assets) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rank + production_of_in_scope_polymers
+---
+production_of_in_scope_polymers over rank starts to increase again substantially after about rank 25
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'production_of_in_scope_polymers')
+df <- plastic %>% rename(x = rank, y = production_of_in_scope_polymers) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rank + flexible_format_contribution_to_sup_waste
+---
+flexible_format_contribution_to_sup_waste over rank starts to increase again substantially after about rank 25, there are a couple of producers above rank 25 which do not produce flexible_format (like outliers), the spread is very high towards the end
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'flexible_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = rank, y = flexible_format_contribution_to_sup_waste) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rank + rigid_format_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste over rank starts to increase again substantially after about rank 25, but compared to flexible_format the spread is not as high (except for one outlier, which is also really low on flexible format), but overall there is less production in rigid_format
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = rank, y = rigid_format_contribution_to_sup_waste) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rank + total_contribution_to_sup_waste
+---
+total_contribution_to_sup_waste over rank, seems to be oddly stepped, but that is because the rank is directly determined by the total_contribution (there are not independent), again the steep increase starts at rank 25 
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'total_contribution_to_sup_waste')
+df <- plastic %>% rename(x = rank, y = total_contribution_to_sup_waste) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rank + total_waste_div_production
+---
+total_waste_div_production over rank ranges from 0.3 to 1.0 and is in general like 0.5 (but this we already saw in univariate analysis), the spread is high across all rank, but there is like a very empty band between 0.6 and 0.9 where only 7 producers are
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'total_waste_div_production')
+df <- plastic %>% rename(x = rank, y = total_waste_div_production) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate no_of_assets + production_of_in_scope_polymers
+---
+low no_of_assets seems to also imply low production_of_in_scope_polymers, which is for like 80% of the producers the case, but after no_of_assets bigger 20, there is in almost linear increase of production with no_of_assets
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('no_of_assets', 'production_of_in_scope_polymers')
+df <- plastic %>% rename(x = no_of_assets, y = production_of_in_scope_polymers) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate no_of_assets + flexible_format_contribution_to_sup_waste
+---
+flexible_format_contribution_to_sup_waste over no_of_assets shows similar picture as production over assets, but with wider spread for assets > 20
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('no_of_assets', 'flexible_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = no_of_assets, y = flexible_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate no_of_assets + rigid_format_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste over no_of_assets is surprisingly different from flexible_format over assets, as it is in the beginning more spread towrad higher contribution, but after assets > 20, there seems to be a threshold at 1.4, where only a few outliers go beyond, though it is rising until this (fast reached) point
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('no_of_assets', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = no_of_assets, y = rigid_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate no_of_assets + total_contribution_to_sup_waste
+---
+total_contribution_to_sup_waste over no_of_assets does again look similar to flexible_format over assets, since total = flexible + rigid, this means that above 20 assets, flexible is dominant, but below there is a wider spread dur to rigid_format
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('no_of_assets', 'total_contribution_to_sup_waste')
+df <- plastic %>% rename(x = no_of_assets, y = total_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate no_of_assets + total_waste_div_production
+---
+total_waste_div_production over no_of_assets show at low number of assets (<20) a wide spread ranging from 0.3 to 1.0, but above there seems to be stable at around 0.45 ratio
+-> maybe there are two different subpopulations behind?
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('no_of_assets', 'total_waste_div_production')
+df <- plastic %>% rename(x = no_of_assets, y = total_waste_div_production) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate production_of_in_scope_polymers + flexible_format_contribution_to_sup_waste
+---
+with a bigger production_of_in_scope_polymers comes relatively linearly a bigger flexible_format_contribution_to_sup_waste, but most producer have a smaller 3 
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'flexible_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = production_of_in_scope_polymers, y = flexible_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate production_of_in_scope_polymers + rigid_format_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste over production_of_in_scope_polymers shows again the cap in rigid_format part not growing beyond 1.3 with production, but also a second tendency in the beginning where a linear behavior of strong growing rigid_format suggest that there might be two sub-populations
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = production_of_in_scope_polymers, y = rigid_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate production_of_in_scope_polymers + total_contribution_to_sup_waste
+---
+total_contribution_to_sup_waste over production_of_in_scope_polymers looks pretty much linear, with a bulk of data points below production < 3
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
+df <- plastic %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate production_of_in_scope_polymers + total_waste_div_production
+---
+in total_waste_div_production over production_of_in_scope_polymers below production < 3 there are two cluster around 0.45 and 1.0, beyond production > 3 it seems to be stable at 0.5
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'total_waste_div_production')
+df <- plastic %>% rename(x = production_of_in_scope_polymers, y = total_waste_div_production) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate flexible_format_contribution_to_sup_waste + rigid_format_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste over flexible_format_contribution_to_sup_waste shows the previously observed phänomena, i) with growing flexible_format, rigid_format also start to grow a little but then stays at around 1.2, ii) there is one group that only grows in rigid_format and produce almost no flexible_format
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = flexible_format_contribution_to_sup_waste, y = rigid_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate flexible_format_contribution_to_sup_waste + total_contribution_to_sup_waste
+---
+flexible_format_contribution_to_sup_waste over total_contribution_to_sup_waste shows an almost linear increase in flexible_format with total_contribution, but here again we have a group with almost no flexible_format (which means that they only produce rigid_format)
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('total_contribution_to_sup_waste', 'flexible_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = total_contribution_to_sup_waste, y = flexible_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate flexible_format_contribution_to_sup_waste + total_waste_div_production
+---
+total_waste_div_production over flexible_format_contribution_to_sup_waste shows agani tqwo clusters one around total_waste_div 1.0 and the other around 0.45, and that the higher regions of flexible_format are only ovvupied by a few producers with a ration around 0.47 
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('flexible_format_contribution_to_sup_waste', 'total_waste_div_production')
+df <- plastic %>% rename(x = flexible_format_contribution_to_sup_waste, y = total_waste_div_production) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rigid_format_contribution_to_sup_waste + total_contribution_to_sup_waste
+---
+rigid_format_contribution_to_sup_waste over total_contribution_to_sup_waste only at the beginning rigid format is growing with total_contribution, but it is not really growing beyond 1.3, for the rigid_format only group, there there is a almost linear group
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('total_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = total_contribution_to_sup_waste, y = rigid_format_contribution_to_sup_waste) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate rigid_format_contribution_to_sup_waste + total_waste_div_production
+---
+most data points lie in the range total_waste_div < 0.7 and rigid_format < 0.5, for the outliers there are two groups one around ratio 1.0 and one with lower ratio around 0.5
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rigid_format_contribution_to_sup_waste', 'total_waste_div_production')
+df <- plastic %>% rename(x = rigid_format_contribution_to_sup_waste, y = total_waste_div_production) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+multivariate total_contribution_to_sup_waste + total_waste_div_production
+---
+total_waste_div_production over total_contribution_to_sup_waste shows again two groups around 1.0 and 0.45 and a concentration under 0.75 total_contribution
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('total_contribution_to_sup_waste', 'total_waste_div_production')
+df <- plastic %>% rename(x = total_contribution_to_sup_waste, y = total_waste_div_production) %>% select(x, y) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+
+
+---
+appendix: old experimental plots
+---
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'no_of_assets')
+df <- plastic %>% rename(x = rank, y = no_of_assets) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_smooth() + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout()
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile() + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal()
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.85, 0.15), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.85, 0.15)) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('rank', 'total_waste_div_production')
+df <- plastic %>% rename(x = rank, y = total_waste_div_production) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_smooth() + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_density_2d.html
+density_2d_plot <- df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_density_2d(alpha = 0.8, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_point(alpha = 0) +
+    theme_minimal()
+density_2d_plot <- ggplotly(density_2d_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.85, 0.15), shareX = TRUE, shareY = TRUE) %>% layout()
+sub2 <- subplot(qualtile_plot, density_2d_plot, margin = 0, widths = c(0.85, 0.15)) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2)) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
