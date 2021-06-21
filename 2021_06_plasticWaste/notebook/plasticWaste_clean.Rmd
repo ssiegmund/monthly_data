@@ -42,7 +42,7 @@ observations
 ---
 load packages
 ---
-```{r load packages, include=FALSE}
+```{r load packages, setup, include=FALSE}
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data

@@ -43,7 +43,7 @@ stories
 ---
 load packages
 ---
-```{r load packages, include=FALSE}
+```{r load packages, setup, include=FALSE}
 library(tidyverse) # tidy data frame
 library(plotly) # make ggplots interactive
 ```
@@ -90,6 +90,7 @@ insights from describe uni
   (i) comparing rigid_format and flexible_format shows that up to the upper fence 1.1, the distribution is similar, but there are more bigger (>3) outliers in flexible
 
 ```{r}
+# one variable, continuous x, show distribution
 name = 'total_contribution_to_sup_waste'
 df <- plastic %>% rename(value = total_contribution_to_sup_waste) %>% select(value)
 
@@ -122,11 +123,12 @@ plot_qq <- df %>%
 plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
 # https://plotly.com/r/subplots/
-fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% layout(xaxis = list(title = name))
 
 fig
 ```
 ```{r}
+# two variables, both continuous x, compare distributions
 name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
 df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
 
@@ -159,7 +161,7 @@ plot_qq <- df %>%
 plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
 # https://plotly.com/r/subplots/
-fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) 
+fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
 
 fig
 ```
@@ -194,11 +196,12 @@ insights from describe multi
   (i) rigid_format_contribution_to_sup_waste over total_contribution_to_sup_waste only at the beginning rigid format is growing with total_contribution, but it is not really growing       beyond 1.3, for the rigid_format only group, there there is a almost linear group
   (i) most data points lie in the range total_waste_div < 0.7 and rigid_format < 0.5, for the outliers there are two groups one around ratio 1.0 and one with lower ratio around 0.5
   (i) total_waste_div_production over total_contribution_to_sup_waste shows again two groups around 1.0 and 0.45 and a concentration under 0.75 total_contribution
+  (i) comparing flexible_format and rigid_format over production shows us that flexible_format is growing linearly while rigid stops growing linearly mid way at production = 6, but         this growth might be disturbed by two different sub-populations and is expected to be much less strong and capping out earlier 
 
 ```{r}
 # two variables, continuous x, continuous y, show trend and distribution
-name = c('production_of_in_scope_polymers', 'rigid_format_contribution_to_sup_waste')
-df <- plastic %>% rename(x = production_of_in_scope_polymers, y = rigid_format_contribution_to_sup_waste) %>% select(x, y) 
+name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
+df <- plastic %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste) %>% select(x, y) 
 
 # https://ggplot2.tidyverse.org/reference/geom_smooth.html
 point_plot <- df %>%
@@ -241,5 +244,50 @@ fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX 
   
 fig
 ```
+```{r}
+# three variables, continuous x, two continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'rigid_format_contribution_to_sup_waste', 'flexible_format_contribution_to_sup_waste')
+df <- plastic %>% rename(x = production_of_in_scope_polymers, rigid = rigid_format_contribution_to_sup_waste, flexible = flexible_format_contribution_to_sup_waste) %>% select(x, rigid, flexible) %>% pivot_longer(cols = c(flexible,rigid)) %>% rename(y = value)
 
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y, colour = name)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x, colour = name)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y, colour = name)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y, colour = name)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout() %>% hide_legend()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = paste(name[2], "<br>", name[3], sep=""))) 
+  
+fig
+```
 
