@@ -38,7 +38,9 @@ summary highlights
 stories
 ---
 
-
+  (!) are there two different sub-populations in the data? like two different types of producers with different behavior regarding rigid_format and flexible_format production 
+      -> may be there are producers with only rigid format
+      -> if group is identified, then add a variable to tag them and make the plots again with group coloring, I wonder if there are also the producers with                                   total_waste_div_production ration 1.0 
 
 ---
 load packages
@@ -169,10 +171,6 @@ fig
 ---
 insights from describe multi
 ---
-
-  (!) are there two different sub-populations in the data? like two different types of producers with different behavior regarding rigid_format and flexible_format production 
-      -> may be there are producers with only rigid format
-      -> if group is identified, then add a variable to tag them and make the plots again with group coloring, I wonder if there are also the producers with                                   total_waste_div_production ration 1.0 
 
   (i) no_of_assets over rank increases only slowly until rank 25, afterwards it starts to increase strongly (compared to before), this is where the outliers come in from no_of_assets       distribution, but most assets in not rank 1
   (i) production_of_in_scope_polymers over rank starts to increase again substantially after about rank 25
