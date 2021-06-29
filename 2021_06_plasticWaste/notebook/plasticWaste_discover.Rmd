@@ -1,0 +1,278 @@
+---
+title: "discover and transform plastic waste makers index data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) test and play with advanced numerical EDA methods
+  
+todos:
+  (-) ...
+  
+---
+information
+---
+
+name: makeovermonday_2021w22
+link: https://data.world/makeovermonday/2021w22
+title: 2021/W22: The Plastic Waste Makers Index
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/) from 2019
+  
+---
+insights 
+---
+
+  (i) correlation - most of the columns are highly correlated, that was to be expected, since most variables are depend on each other, e.g., rigid + flexible = total c production,                         total -> -rank
+                    rigid overall has a less strong correlation with the other variables, which might hint to there being a a different sub-population based on rigid production, 
+                    flexible has a stronger correlation with total as rigid and total, since flexible is a far bigger contribution to total
+                    flexible has a stronger correlation with the overall production, than rigid, this is interesting and also might hint to rigid producers have a different market                        strategy than flexible producers
+  (i) a Gini coefficient of 0.56 is quite high, which means that only a top few producers are responsible for a large amount of the total SUP waste contribution, in other words 10%         are responsible for 44% of the waste
+  
+---
+load packages
+---
+```{r load packages, setup, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+
+# individual libraries are in the according cell
+```
+
+---
+overview
+---
+```{r}
+head(plastic)
+```
+```{r}
+summary(plastic)
+```
+
+---
+correlation 
+---
+most of the columns are highly correlated, that was to be expected, since most variables are depend on each other, e.g., rigid + flexible = total c production, total -> -rank
+rigid overall has a less strong correlation with the other variables, which might hint to there being a a different sub-population based on rigid production, 
+flexible has a stronger correlation with total as rigid and total, since flexible is a far bigger contribution to total
+flexible has a stronger correlation with the overall production, than rigid, this is interesting and also might hint to rigid producers have a different market strategy than flexible producers
+
+%>% select(-rank, -total, -assets) can show a more clear picture by removing dependent variables
+
+```{r}
+name = c('')
+df <- plastic %>% select(-polymer_producer, - total_waste_div_production) %>% mutate(rank = -rank) %>% # change sign of rank to make it increase with the dependent variables
+  rename( assets = no_of_assets, 
+          product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste, 
+          total = total_contribution_to_sup_waste) 
+
+
+library(corrplot) # correlation plots
+# https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+
+cor <- cor(df)
+cor_mtest <- cor.mtest(df, conf.level = 0.99) # combining correlogram with significance test
+corrplot(cor, method = "number", order = 'hclust', addrect = 3, p.mat = cor_mtest$p, insig = "pch") # order = AOE, FPC, hclust + addrect
+
+corrplot(cor, p.mat = cor_mtest$p, low = cor_mtest$lowCI, upp = cor_mtest$uppCI, order = 'hclust', sig.level = 0.01, tl.pos = 'd', addrect = 3, rect.col = 'navy', plotC = 'rect', cl.pos = 'n', insig = "p-value")
+```
+
+---
+Lorenz curve & Gini coefficient
+---
+a Gini coefficient of 0.56 is quite high, which means that only a top few producers are responsible for a large amount of the total SUP waste contribution, in other words 10% are responsible for 44% of the waste
+
+
+```{r}
+name = c('total_contribution_to_sup_waste', 'Producers')
+df <- plastic %>% rename(value = total_contribution_to_sup_waste) %>% select(value) 
+
+library(gglorenz) #transformations for plotting Lorenz curve, https://github.com/jjchern/gglorenz
+
+lorenzcurve <- df %>% 
+  ggplot(aes(value)) +
+    stat_lorenz(desc = FALSE) +
+    coord_fixed() +
+    geom_abline(linetype = 'dashed') +
+    theme_minimal() +
+    hrbrthemes::scale_x_percent() +
+    hrbrthemes::scale_y_percent() +
+    # hrbrthemes::theme_ipsum_rc() +
+    annotate_ineq(df$value) +
+    ggtitle(paste("Lorenz curve for", name[1], sep=" ")) 
+lorenzcurve <- ggplotly(lorenzcurve) %>% layout(yaxis = list(title = paste("cumulative percentage of", name[1], sep=" ")), xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
+
+lorenzcurve
+```
+```{r}
+name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste', 'Producers', 'flexible', 'rigid')
+df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
+
+library(gglorenz) #transformations for plotting Lorenz curve, https://github.com/jjchern/gglorenz
+
+# get ggplot standard colors for grouping, which are equally spaced hues around the color wheel, starting from 15
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+lorenzcurve <- df %>% 
+  ggplot(aes(x = value, color = name)) +
+    stat_lorenz(desc = FALSE) +
+    coord_fixed() +
+    geom_abline(linetype = 'dashed') +
+    theme_minimal() +
+    hrbrthemes::scale_x_percent() +
+    hrbrthemes::scale_y_percent() +
+    # hrbrthemes::theme_ipsum_rc() +
+    annotate_ineq(filter(df, name == name[4])$value, y = 0.95, colour = gg_color_hue(2)[1]) +
+    annotate_ineq(filter(df, name == name[5])$value, y = 0.90, colour = gg_color_hue(2)[2]) +
+    ggtitle(paste("compare Lorenz curve of", name[1], "and", name[2], sep=" ")) 
+lorenzcurve <- ggplotly(lorenzcurve) %>% layout(yaxis = list(title = paste("cumulative percentage of<br>", name[1], "<br>", name[2], sep="")), xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
+
+lorenzcurve
+```
+
+---
+principal component analysis colored by self organizing map cluster
+---
+I need more knowledge how to work with and interpret SOM and PCA, maybe also not enough observations in data set
+https://iamciera.github.io/SOMexample/html/SOM_RNAseq_tutorial_part2a_SOM.html
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+
+library(kohonen) # functions to train self-organising maps (SOMs)
+
+# setup for pca
+scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+head(scale_data)
+
+# principle component analysis
+pca <- prcomp(scale_data, scale=TRUE)
+summary(pca) 
+
+# add back to original so everything is together
+pca_scores <- data.frame(pca$x)
+data_val <- cbind(df, pca_scores)
+
+pca_plot <- ggplot(data_val, aes(x = PC1, y = PC2)) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal()
+pca_plot <- ggplotly(pca_plot) %>% layout()
+
+pca_plot
+
+# clustering is performed using the som() function on the scaled gene expression values.
+set.seed(3)
+
+# define a grid for the SOM and train
+grid_size <- ncol(scale_data)
+som_grid <- somgrid(xdim = grid_size, ydim = grid_size, topo = 'hexagonal')
+som_model <- som(scale_data, grid = som_grid)
+summary(som_model)
+
+# generate som plots after training
+plot(som_model, type = 'mapping')
+plot(som_model, type = 'codes')
+# plot(som_model, type = 'counts')
+# plot(som_model, type = 'dist.neighbours')
+# plot(som_model, type = 'quality')
+# plot(som_model, type = 'changes')
+
+# further split the clusters into a smaller set of clusters using hierarchical clustering.
+som_cluster <- cutree(hclust(dist(som_model$codes[[1]])), 2) # use hierarchical clustering to cluster the codebook vectors
+
+plot(som_model, type="mapping", bgcol = som_cluster, main = "Clusters")
+add.cluster.boundaries(som_model, som_cluster)
+
+# attach the hierchal cluster to the larger dataset data_val.
+gridSquare <- grid_size * grid_size
+som_clusterKey <- data.frame(som_cluster)
+som_clusterKey$unit_classif <- c(1:gridSquare)
+data_val <- cbind(data_val,som_model$unit.classif,som_model$distances)  %>% rename(unit_classif = 'som_model$unit.classif', distances = 'som_model$distances')
+data_val <- merge(data_val, som_clusterKey, by.x = "unit_classif" )
+head(data_val)
+
+# plot pca with colored clusters
+pcasom_plot <- ggplot(data_val, aes(x = PC1, y = PC2, color = factor(som_cluster), text = polymer_producer)) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal()
+pcasom_plot <- ggplotly(pcasom_plot) %>% layout()
+
+pcasom_plot
+```
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
+df <- merge(plastic, data_val, by.x = 'polymer_producer')
+df <- df %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste, cluster = som_cluster, text = polymer_producer) %>% select(x, y, cluster, text) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(aes(text = text), alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

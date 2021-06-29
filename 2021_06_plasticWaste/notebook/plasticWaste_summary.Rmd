@@ -199,7 +199,7 @@ insights from describe multi
 ```{r}
 # two variables, continuous x, continuous y, show trend and distribution
 name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
-df <- plastic %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste) %>% select(x, y) 
+df <- plastic %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste, text = polymer_producer) %>% select(x, y, text) 
 
 # https://ggplot2.tidyverse.org/reference/geom_smooth.html
 point_plot <- df %>%
@@ -208,7 +208,7 @@ point_plot <- df %>%
     geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
     geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
     geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
-    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    geom_point(aes(text = text), alpha = 0.75) + # point geom is used to create scatterplots
     theme_minimal() +
     ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
 point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
