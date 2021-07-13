@@ -30,16 +30,41 @@ insights
                     flexible has a stronger correlation with total as rigid and total, since flexible is a far bigger contribution to total
                     flexible has a stronger correlation with the overall production, than rigid, this is interesting and also might hint to rigid producers have a different market                        strategy than flexible producers
   (i) a Gini coefficient of 0.56 is quite high, which means that only a top few producers are responsible for a large amount of the total SUP waste contribution, in other words 10%         are responsible for 44% of the waste
+  (i) I need more knowledge how to work with and interpret SOM and PCA, maybe also not enough observations in data set,                           
+      but the clustering from SOM, when only independent variables are used, actually show the two assumed subpopulations based on rigid vs flexible production
+  (i) parallel coordinate plot is not very insightful, since there is so much data close together, we cannot see any grouping without prior knowledge, only hint is when you zoom in at       the bulk of the data in the lower third (y direction), there is a negative correlation
+  (i) remind that the difference with the partition by k-means is that for hierarchical clustering, the number of classes is not specified in advance   
+      it seems that most clusters are confused by some specific values (81, 63, 72, 36?), are they some sort of outlier, or what is special about them?
+  (i) As a reminder, this method aims at partitioning n observations into k clusters in which each observation belongs to the cluster with the closest average, serving as a prototype       of the cluster
+      works not quite as well as SOM, but very close, also recommend cluster is three, but closely followed by 2, since 3 does not reveal any significant connection right now, I            wonder what that shows
+      
+---
+references
+---
   
+  (i) https://iamciera.github.io/SOMexample/html/SOM_RNAseq_tutorial_part2a_SOM.html
+  (i) https://statsandr.com/blog/clustering-analysis-k-means-and-hierarchical-clustering-by-hand-and-in-r/#optimal-number-of-clusters
+  (i) https://lukedaniels1.github.io/Bio381_2018/Daniels_Cluster_Analysis_Lecture.html
+  (i) https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+      
 ---
-load packages
+load packages & global options
 ---
-```{r load packages, setup, include=FALSE}
+```{r, setup, include=FALSE}
 library(tidyverse) # tidy data frame
 library(ggthemes) # for extra plot themes
 library(plotly) # make ggplots interactive
 
+library(factoextra) # provides some easy-to-use functions to extract and visualize the output of multivariate data analyses
+
 # individual libraries are in the according cell
+
+knitr::opts_chunk$set(
+  # fig.width = 15, fig.height = 9, 
+  warning = FALSE
+)
+
+# plotly: ,width = 900, height = 550
 ```
 
 ---
@@ -144,6 +169,8 @@ principal component analysis colored by self organizing map cluster
 I need more knowledge how to work with and interpret SOM and PCA, maybe also not enough observations in data set
 https://iamciera.github.io/SOMexample/html/SOM_RNAseq_tutorial_part2a_SOM.html
 
+but the clustering from SOM, when only independent variables are used, actually show the two assumed subpopulations based on rigid vs flexible produciton
+
 ```{r}
 name = c('polymer_producer')
 df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
@@ -160,7 +187,18 @@ head(scale_data)
 
 # principle component analysis
 pca <- prcomp(scale_data, scale=TRUE)
-summary(pca) 
+summary(pca)
+
+# visualize pcs results
+# Contributions of variables to PC1
+fviz_contrib(pca, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+fviz_contrib(pca, choice = "var", axes = 2, top = 10)
+# Control variable colors using their contributions to the principle axis
+fviz_pca_var(pca, col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             ) + theme_minimal() + ggtitle("Variables - PCA")
 
 # add back to original so everything is together
 pca_scores <- data.frame(pca$x)
@@ -202,7 +240,7 @@ add.cluster.boundaries(som_model, som_cluster)
 gridSquare <- grid_size * grid_size
 som_clusterKey <- data.frame(som_cluster)
 som_clusterKey$unit_classif <- c(1:gridSquare)
-data_val <- cbind(data_val,som_model$unit.classif,som_model$distances)  %>% rename(unit_classif = 'som_model$unit.classif', distances = 'som_model$distances')
+data_val <- cbind(data_val,som_model$unit.classif,som_model$distances) %>% rename(unit_classif = 'som_model$unit.classif', distances = 'som_model$distances')
 data_val <- merge(data_val, som_clusterKey, by.x = "unit_classif" )
 head(data_val)
 
@@ -264,14 +302,280 @@ fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX 
 fig
 ```
 
+---
+parallel coordinate plot
+---
+parallel coordinate plot is not very insightful, since there is so much data close together, we cannot see any grouping without prior knowledge, only hint is when you zoom in at the bulk of the data in the lower third (y direction), there is a negative correlation
+
+```{r}
+name = c('plastic producers clustered by focus')
+df <- merge(plastic, select(data_val, som_cluster, polymer_producer), by.x = 'polymer_producer') %>%
+  mutate(som_cluster = as.character(som_cluster)) %>%
+  rename(product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste,
+          assets =  no_of_assets,
+          cluster = som_cluster) %>% 
+  select(assets, product, flexible, rigid, cluster) 
+
+library(GGally) # extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data
+
+# https://www.r-graph-gallery.com/parallel-plot-ggally.html#custom
+parcoord_plot <- ggparcoord(df,
+           columns = 1:4, groupColumn = 5,
+           scale='center', # scaling: standardize and center variables
+           showPoints = TRUE,
+           title = name,
+           alphaLines = 0.3) +
+  theme_minimal() 
+parcoord_plot <- ggplotly(parcoord_plot) %>% layout(autosize=T)
+
+parcoord_plot
+```
+
+---
+k-means clustering
+---
+https://statsandr.com/blog/clustering-analysis-k-means-and-hierarchical-clustering-by-hand-and-in-r/#optimal-number-of-clusters
+As a reminder, this method aims at partitioning n observations into k clusters in which each observation belongs to the cluster with the closest average, serving as a prototype of the cluster
+works not quite as well as SOM, but very close, also recommend cluster is three, but closely followed by 2, since 3 does not reveal any significant connection right now, I wonder what that shows
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+library(NbClust) # determining the optimal number of clusters in a data set
+library(cluster) # computes agglomerative hierarchical clustering of the dataset
+
+scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+head(scale_data)
+
+kmeans_model <- kmeans(scale_data, centers = 2, nstart = 12) #  k-means clustering is done via the kmeans() function, with the argument centers that corresponds to the number of desired clusters
+df_cluster <- tibble(df, cluster = as.factor(kmeans_model$cluster)) # store cluster in original data set as column
+head(df_cluster)
+
+# check quality of a k-means partition
+quality <- kmeans_model$betweenss / kmeans_model$totss 
+print(paste("quality of kmeans is BSS/TSS: ", format(round(quality,2), nsmall = 2)))
+
+# find optimal number of clusters
+fviz_nbclust(scale_data, kmeans, method = 'wss') + # Elbow method, needs scaled data
+  geom_vline(xintercept = 2, linetype = 2) + # add line for better visualization
+  labs(subtitle = "Elbow method") # add subtitle
+
+fviz_nbclust(scale_data, kmeans, method = 'silhouette') + # Silhouette method, needs scaled data
+  labs(subtitle = "Silhouette method") # add subtitle
+
+fviz_nbclust(df[, !names(df) %in% name], kmeans, # Gap statistics, needs original data ?
+             nstart = 25,
+             method = 'gap_stat',
+             nboot = 100) + # reduce it for lower computation time, but less precise results
+  labs(subtitle = "Gap statistics method")
+
+nbclust_out <- NbClust(data = df[, !names(df) %in% name], # NbClust needs the original data ?
+                       distance = 'euclidean',
+                       min.nc = 2, # minimum number of clusters
+                       max.nc = 10, # maximum number of cluster
+                       method = 'complete',
+                       index = 'all')
+fviz_nbclust(nbclust_out) + theme_minimal() +
+  labs(subtitle = "NbClust results")
+
+# check quality of clustering
+# if a large majority of the silhouette coefficients are positive, it indicates that the observations are placed in the correct group
+sil <- silhouette(kmeans_model$cluster, dist(scale_data)) 
+fviz_silhouette(sil)
+
+fviz_cluster(kmeans_model, df[, !names(df) %in% name], ellipse.type = 'norm') + theme_minimal()
+```
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+
+kmean_calc <- function(df, ...){
+  kmeans(df, scaled = ..., nstart = 30)
+}
+
+km2 <- kmean_calc(scale_data, 2)
+km3 <- kmean_calc(scale_data, 3)
+km4 <- kmeans(scale_data, 4)
+km5 <- kmeans(scale_data, 5)
+km6 <- kmeans(scale_data, 6)
+km7 <- kmeans(scale_data, 7)
+
+p1 <- fviz_cluster(km2, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
+p2 <- fviz_cluster(km3, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
+p3 <- fviz_cluster(km4, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
+p5 <- fviz_cluster(km6, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
+p6 <- fviz_cluster(km7, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
+
+fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() # TOOD: make all plots linked
+fig
+```
 
 
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
+df <- tibble(plastic, cluster = as.factor(kmeans_model$cluster))
+df <- df %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste, cluster = cluster, text = polymer_producer) %>% select(x, y, cluster, text) 
 
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(aes(text = text), alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
 
+x_density_plot <- df %>%
+  ggplot(aes(x = x, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
+y_density_plot <- df %>%
+  ggplot(aes(x = y, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
 
+fig
+```
+
+---
+hierarchical clustering
+---
+https://statsandr.com/blog/clustering-analysis-k-means-and-hierarchical-clustering-by-hand-and-in-r/#optimal-number-of-clusters
+remind that the difference with the partition by k-means is that for hierarchical clustering, the number of classes is not specified in advance
+
+it seems that most clusters are confused by some specific values (81, 63, 72, 36?), are they some sort of outlier, or what is special about them?
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+head(scale_data)
+
+no_k = 2;
+
+# Hierarchical clustering: single linkage
+hclust_res <- hclust(dist(scale_data), method = 'single')
+fviz_dend(hclust_res, k = no_k, rect = TRUE)
+
+# Hierarchical clustering: complete linkage
+hclust_res <- hclust(dist(scale_data), method = 'complete')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+
+# Hierarchical clustering: average linkage
+hclust_res <- hclust(dist(scale_data), method = 'average')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+
+# Hierarchical clustering: ward
+hclust_res <- hclust(dist(scale_data), method = 'ward.D')
+fviz_dend(hclust_res, k = no_k, rect = TRUE)
+
+# Hierarchical clustering: mcquitty
+hclust_res <- hclust(dist(scale_data), method = 'mcquitty')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+
+# Hierarchical clustering: centroid
+hclust_res <- hclust(dist(scale_data), method = 'centroid')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+```
+
+---
+Clustree
+---
+https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+In this figure the size of each node corresponds to the number of samples in each cluster, and the arrows are coloured according to the number of samples each cluster receives. A separate set of arrows, the transparent ones, called the incoming node proportion, are also coloured and shows how samples from one group end up in another group — an indicator of cluster instability.
+
+```{r, fig.width = 15, fig.height = 9}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+# config
+no_of_cluster = 9
+
+library(clustree) # produce clustering trees, a visualization for interrogating clusterings as resolution increases
+
+scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+head(scale_data)
+
+tmp <- NULL
+for (k in 1:no_of_cluster){
+  tmp[k] <- kmeans(scale_data, k, nstart = 30)
+}
+
+tmp_df <- data.frame(tmp)
+colnames(tmp_df) <- seq(1:no_of_cluster) # add prefix to the column names
+colnames(tmp_df) <- paste0("k", colnames(tmp_df)) 
+
+# get individual PCA
+tmp_df.pca <- prcomp(tmp_df, center = TRUE, scale. = FALSE)
+
+ind.coord <- tmp_df.pca$x
+ind.coord <- ind.coord[,1:2]
+
+tmp_df <- bind_cols(as.data.frame(tmp_df), as.data.frame(ind.coord))
+
+clustree(tmp_df, prefix = "k") # produce clustering trees, a visualization for interrogating clustering as resolution increases
+
+overlay_list <- clustree_overlay(tmp_df, prefix = "k", x_value = "PC1", y_value = "PC2", plot_sides = TRUE)
+overlay_list$overlay
+overlay_list$x_side
+overlay_list$y_side
+```
+
+---
+cValid to choose best clustering algo
+---
+https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+The cValid package can be used to simultaneously compare multiple clustering algorithms, to identify the best clustering approach and the optimal number of clusters. We will compare k-means, hierarchical and PAM clustering.
+
+```{r}
+
+```
 
 
 
