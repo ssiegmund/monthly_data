@@ -178,15 +178,19 @@ df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -to
           flexible = flexible_format_contribution_to_sup_waste, 
           rigid = rigid_format_contribution_to_sup_waste)
 
+# We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+head(scale_data)
+
 
 library(kohonen) # functions to train self-organising maps (SOMs)
 
-# setup for pca
-scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
-head(scale_data)
-
 # principle component analysis
-pca <- prcomp(scale_data, scale=TRUE)
+pca <- prcomp(scale_data, scale=FALSE)
 summary(pca)
 
 # visualize pcs results
@@ -350,7 +354,9 @@ df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -to
 library(NbClust) # determining the optimal number of clusters in a data set
 library(cluster) # computes agglomerative hierarchical clustering of the dataset
 
-scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
 head(scale_data)
 
 kmeans_model <- kmeans(scale_data, centers = 2, nstart = 12) #  k-means clustering is done via the kmeans() function, with the argument centers that corresponds to the number of desired clusters
@@ -363,7 +369,7 @@ print(paste("quality of kmeans is BSS/TSS: ", format(round(quality,2), nsmall = 
 
 # find optimal number of clusters
 fviz_nbclust(scale_data, kmeans, method = 'wss') + # Elbow method, needs scaled data
-  geom_vline(xintercept = 2, linetype = 2) + # add line for better visualization
+  # geom_vline(xintercept = 2, linetype = 2) + # add line for better visualization
   labs(subtitle = "Elbow method") # add subtitle
 
 fviz_nbclust(scale_data, kmeans, method = 'silhouette') + # Silhouette method, needs scaled data
@@ -390,6 +396,7 @@ sil <- silhouette(kmeans_model$cluster, dist(scale_data))
 fviz_silhouette(sil)
 
 fviz_cluster(kmeans_model, df[, !names(df) %in% name], ellipse.type = 'norm') + theme_minimal()
+fviz_cluster(kmeans_model, df[, !names(df) %in% name]) + theme_minimal()
 ```
 
 ```{r}
@@ -399,7 +406,9 @@ df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -to
           flexible = flexible_format_contribution_to_sup_waste, 
           rigid = rigid_format_contribution_to_sup_waste)
 
-scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
 
 kmean_calc <- function(df, ...){
   kmeans(df, scaled = ..., nstart = 30)
@@ -412,12 +421,18 @@ km5 <- kmeans(scale_data, 5)
 km6 <- kmeans(scale_data, 6)
 km7 <- kmeans(scale_data, 7)
 
-p1 <- fviz_cluster(km2, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
-p2 <- fviz_cluster(km3, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
-p3 <- fviz_cluster(km4, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
-p4 <- fviz_cluster(km5, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
-p5 <- fviz_cluster(km6, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
-p6 <- fviz_cluster(km7, data = scale_data, ellipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
+p1 <- fviz_cluster(km2, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p1 <- ggplotly(p1) %>% layout(annotations = list(text = "k = 2", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p2 <- fviz_cluster(km3, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p2 <- ggplotly(p2) %>% layout(annotations = list(text = "k = 3", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p3 <- fviz_cluster(km4, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p3 <- ggplotly(p3) %>% layout(annotations = list(text = "k = 4", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p4 <- fviz_cluster(km5, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p4 <- ggplotly(p4) %>% layout(annotations = list(text = "k = 5", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p5 <- fviz_cluster(km6, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p5 <- ggplotly(p5) %>% layout(annotations = list(text = "k = 6", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p6 <- fviz_cluster(km7, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p6 <- ggplotly(p6) %>% layout(annotations = list(text = "k = 7", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
 
 fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() # TOOD: make all plots linked
 fig
@@ -487,7 +502,9 @@ df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -to
           flexible = flexible_format_contribution_to_sup_waste, 
           rigid = rigid_format_contribution_to_sup_waste)
 
-scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
 head(scale_data)
 
 no_k = 2;
@@ -507,7 +524,7 @@ plot(hclust_res)
 rect.hclust(hclust_res, k = no_k, border = 'blue')
 
 # Hierarchical clustering: ward
-hclust_res <- hclust(dist(scale_data), method = 'ward.D')
+hclust_res <- hclust(dist(scale_data), method = 'ward.D2')
 fviz_dend(hclust_res, k = no_k, rect = TRUE)
 
 # Hierarchical clustering: mcquitty
@@ -539,7 +556,9 @@ no_of_cluster = 9
 
 library(clustree) # produce clustering trees, a visualization for interrogating clusterings as resolution increases
 
-scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
 head(scale_data)
 
 tmp <- NULL
@@ -568,15 +587,261 @@ overlay_list$y_side
 ```
 
 ---
-cValid to choose best clustering algo
+clValid to choose best clustering algo
 ---
 https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
 The cValid package can be used to simultaneously compare multiple clustering algorithms, to identify the best clustering approach and the optimal number of clusters. We will compare k-means, hierarchical and PAM clustering.
+Connectivity and Silhouette are both measurements of connectedness while the Dunn Index is the ratio of the smallest distance between observations not in the same cluster to the largest intra-cluster distance.
 
 ```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
 
+library(clValid) # Statistical and biological validation of clustering results. This package implements Dunn Index, Silhouette, Connectivity, Stability, BHI and BSI
+library(mclust) # BIC for parameterized Gaussian mixture models fitted by EM algorithm initialized by model-based hierarchical clustering
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+intern <- clValid(scale_data, nClust = 2:9, 
+                  clMethods = c("hierarchical", "kmeans", "diana", "fanny", "som", "model", "sota", "pam", "clara", "agnes"),
+                  validation = "internal")
+
+summary(intern)
 ```
 
+---
+Extracting Features of Clusters
+---
+https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+Ultimately, we would like to answer questions like “what is it that makes this cluster unique from others?” and “what are the clusters that are similar to one another”. Let’s select four clusters and interrogate the features of these clusters.
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+no_k = 3
+no_var = 3
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+# compute dissimilarity matrix with euclidean distances
+d <- dist(scale_data, method = 'euclidean')
+
+# hierarchical clustering using Ward's method
+res_hc <- hclust(d, method = 'ward.D2')
+
+# cut tree into 3 groups
+grp <- cutree(res_hc, k = no_k)
+
+# visualize
+plot(res_hc, cex = 0.6) # plot tree
+rect.hclust(res_hc, k = no_k, border = 2:5) # add rectangles
+
+# execution of k-means with k = 4
+final <- kmeans(scale_data, no_k, nstart = 30)
+
+fviz_cluster(final, data = scale_data) + theme_minimal() + ggtitle("k = 4")
+```
+```{r}
+as.tibble(scale_data) %>% 
+  mutate(cluster = final$cluster) %>%
+  group_by(cluster) %>%
+  summarise_all('mean')
+
+as.tibble(plastic) %>% 
+  mutate(cluster = final$cluster) %>%
+  group_by(cluster) %>%
+  summarise_all('mean')
+```
+```{r}
+df <- as_tibble(scale_data) %>% rownames_to_column()
+
+cluster_pos <- as_tibble(final$cluster) %>% rownames_to_column()
+colnames(cluster_pos) <- c("rowname", "cluster")
+
+final <- inner_join(cluster_pos, df, by = "rowname")
+
+library(ggiraphExtra) # enhance 'ggplot2' and 'ggiraph', provides functions for exploratory plots, see https://rpubs.com/cardiomoon/231820
+
+radar <- ggRadar(final[-1], aes(group = cluster), rescale = FALSE,
+        legend.position = "none", size = 1, interactive = FALSE, use.label = TRUE) +
+  facet_wrap(~cluster) +
+  scale_y_discrete(breaks = NULL) + # don't show ticks
+  theme_minimal()
+
+radar
+```
+```{r}
+df <- as_tibble(scale_data)
+df$cluster <- as.factor(final$cluster)
+
+library(GGally) # extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data
+
+ggpairs(df, 1:no_var, mapping = ggplot2::aes(color = cluster, alpha = 0.5),
+        diag = list(continuous = wrap("densityDiag")),
+        lower = list(continuous = wrap("points", alpha = 0.9))) +
+  theme_minimal()
+```
+```{r}
+df <- as_tibble(scale_data)
+df$cluster <- as.factor(final$cluster)
+
+box1 <- ggplot(df, aes(x = cluster, y = product, colour = cluster)) + 
+    geom_boxplot() +
+    theme_minimal() + 
+    ggtitle("product")
+box1 <- ggplotly(box1) %>% layout(annotations = list(text = "product", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+box2 <- ggplot(df, aes(x = cluster, y = rigid, colour = cluster)) + 
+    geom_boxplot() +
+    theme_minimal() +
+    ggtitle("rigid")
+box2 <- ggplotly(box2) %>% layout(annotations = list(text = "rigid", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+box3 <- ggplot(df, aes(x = cluster, y = flexible, colour = cluster)) + 
+    geom_boxplot() +
+    theme_minimal() +
+    ggtitle("flexible")
+box3 <- ggplotly(box3) %>% layout(annotations = list(text = "flexible", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+fig <- subplot(box1, box2, box3, margin = 0) %>% layout()
+
+fig
+```
+```{r}
+df <- as_tibble(scale_data)
+df$cluster <- as.factor(final$cluster)
+
+library(GGally) # extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data
+
+# https://www.r-graph-gallery.com/parallel-plot-ggally.html#custom
+parcoord_plot <- ggparcoord(df,
+           columns = 1:no_var, groupColumn = (no_var+1),
+           scale='center', # scaling: standardize and center variables
+           showPoints = TRUE,
+           title = name,
+           alphaLines = 0.3) +
+  theme_minimal() 
+parcoord_plot <- ggplotly(parcoord_plot) %>% layout(autosize=T)
+
+parcoord_plot
+```
+
+---
+compare scale functions
+---
+scale is generic function whose default method centers and/or scales the columns of a numeric matrix
+normally you scale the columns (ie variables) to have all variables on the same scale st an increase in 1 unit has the same meaning across all variables, the shape / distribution will not change, but the axis units (see scatter plots)
+scaling the rows (ie observations) made all observations equal in the sense that the absolute distances were replaced by relative distances across all observations, st now the biggest value in a row was across all rows equally big (see "dataframe" plot),
+in our case that was the production variable, now rigid and flexible were separated if there was more or less of them relative to the total production (biggest value, well actually to the mean not the max, but never mind), this sorted all observations according to be more on the rigid or flexible side,
+and that was excatly what I was looking for (and why I was too happy to see my mistake in the first place)
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+scale_data <- as_tibble(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+
+head(scale_data)
+
+scale_data <- as_tibble(scale(df[, !names(df) %in% name]))
+
+head(scale_data)
+
+head(t(df[, !names(df) %in% name]))
+
+library(caret)
+preObj <- preProcess(df[, !names(df) %in% name], method=c("center", "scale"))
+newData <- predict(preObj, df[, !names(df) %in% name])
+head(newData)
+
+# find more methods here: https://stackoverflow.com/questions/15215457/standardize-data-columns-in-r
+```
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+scaleRow <- as_tibble(t(scale(t(df[, !names(df) %in% name]))))
+head(scaleRow)
+scaleCol <- as_tibble(scale(df[, !names(df) %in% name]))
+head(scaleCol)
+df <- df %>% select(-polymer_producer)
+head(df)
+
+scatterRow <- ggplot(scaleRow, aes(x = flexible, y = rigid)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterRow <- ggplotly(scatterRow) %>% layout(annotations = list(text = "scaleRow", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scatterCol <- ggplot(scaleCol, aes(x = flexible, y = rigid)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterCol <- ggplotly(scatterCol) %>% layout(annotations = list(text = "scaleCol", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scatterDf <- ggplot(df, aes(x = flexible, y = rigid)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterDf <- ggplotly(scatterDf) %>% layout(annotations = list(text = "normal", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+subplot(scatterRow, scatterCol, scatterDf) %>% layout()
 
 
+scaleRow2 <- scaleRow %>% pivot_longer(cols = c(flexible,rigid,product))
+boxRow <- ggplot(scaleRow2, aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() 
+boxRow <- ggplotly(boxRow) %>% layout(annotations = list(text = "scaleRow", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scaleCol2 <- scaleCol %>% pivot_longer(cols = c(flexible,rigid,product))
+boxCol <- ggplot(scaleCol2, aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() 
+boxCol <- ggplotly(boxCol) %>% layout(annotations = list(text = "scaleCol", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+df_long <- df %>% pivot_longer(cols = c(flexible,rigid,product))
+boxDf <- ggplot(df_long, aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() 
+boxDf <- ggplotly(boxDf) %>% layout(annotations = list(text = "normal", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+subplot(boxRow, boxCol, boxDf) %>% layout()
+
+
+scaleRow <- scaleRow %>% rowid_to_column() %>% pivot_longer(cols = c(flexible,rigid,product))
+scatterRow <- ggplot(scaleRow, aes(x = value, y = rowid, colour = name)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterRow <- ggplotly(scatterRow) %>% layout(annotations = list(text = "scaleRow", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scaleCol <- scaleCol %>% rowid_to_column() %>% pivot_longer(cols = c(flexible,rigid,product))
+scatterCol <- ggplot(scaleCol, aes(x = value, y = rowid, colour = name)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterCol <- ggplotly(scatterCol) %>% layout(annotations = list(text = "scaleCol", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+df_id <- df %>% rowid_to_column() %>% pivot_longer(cols = c(flexible,rigid,product))
+scatterDf <- ggplot(df_id, aes(x = value, y = rowid, colour = name)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterDf <- ggplotly(scatterDf) %>% layout(annotations = list(text = "normal", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+subplot(scatterRow, scatterCol, scatterDf) %>% layout()
+```
 
