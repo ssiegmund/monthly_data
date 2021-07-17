@@ -15,15 +15,15 @@ knitr::opts_chunk$set(
 purpose of notebook
 ---
 
-  (-) initial look at data to get a basic understanding and gather todos
-  (-) tidy up and cleaning of data set
-  (-) save pre-processed data set
+  - [x] initial look at data to get a basic understanding and gather todos  
+  - [ ] tidy up and cleaning of data set  
+  - [ ] save pre-processed data set  
 
 ---
 observations
 ---
   
-  (i) columns:   
+  - columns:   
   | # | attribute | description / properties |                                                                                               
   |:-:|:---------:|:-----------------------------------------------------------:|
   | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
@@ -34,10 +34,10 @@ observations
   | 6 | rigid_format_contribution_to_sup_waste | numeric, metric in million metric tons, rigid form of contribution to sup waste |
   | 7 | total_contribution_to_sup_waste | numeric, metric in million metric tons, total contribution is the sum of flexible and rigid |
   
-  (i) missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
-  (i) no duplicated rows
-  (i) no changes were made to data set
-  (i) added a variable which gives the percentage of the sup_waste from the produced polymers
+  - missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
+  - no duplicated rows
+  - no changes were made to data set
+  - added a variable which gives the percentage of the sup_waste from the produced polymers
                
 ---
 load packages
