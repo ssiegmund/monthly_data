@@ -1,0 +1,149 @@
+---
+title: "cleaning for plastic waste makers index data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) initial look at data to get a basic understanding and gather todos
+  (-) tidy up and cleaning of data set
+  (-) save pre-processed data set
+
+---
+observations
+---
+  
+  (i) columns: rank                                         numeric, ordered, unique, can serve as identifier, rank of producer according to index
+               polymer_producer                             string, unique identifier, name of producer
+               no_of_assets                                 numeric, metric, number of assets of the producer
+               production_of_in_scope_polymers              numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis
+               flexible_format_contribution_to_sup_waste    numeric, metric in million metric tons, flexible form of contribution to sup waste
+               rigid_format_contribution_to_sup_waste       numeric, metric in million metric tons, rigid form of contribution to sup waste
+               total_contribution_to_sup_waste              numeric, metric in million metric tons, total contribution is the sum of flexible and rigid
+  (i) missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
+  (i) no duplicated rows
+  (i) no changes were made to data set
+  (i) added a variable which gives the percentage of the sup_waste from the produced polymers
+               
+---
+load packages
+---
+```{r load packages, setup, include=FALSE}
+library(tidyverse) # tidy data frame
+library(lubridate) # functions to work with date-times and time-spans
+library(scrubr) # like dplyr but specifically for occurrence data
+```
+
+---
+import data
+---
+```{r}
+df_raw <- read_csv(file = '../data/camera_dataset.csv')
+df <- df_raw
+```
+
+---
+first look at data
+---
+```{r}
+head(df_raw, 25)
+```
+```{r}
+tail(df_raw)
+```
+```{r}
+summary(df_raw)
+```
+
+---
+missing values
+---
+missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
+
+```{r}
+#create data frame with information on whether the value in each cell is missing
+missing_by_column <- df_raw %>%
+  is.na %>% # check is each cell is na
+  as_tibble %>% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = "",
+                  labels = c("present", "missing")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=8)) +
+  labs(x = "vairables in dataset",
+       y = "rows / observations")
+```
+```{r}
+# drop the rows with missing values 
+df <- df[-c(346, 347), ]
+```
+
+---
+duplicated rows
+---
+no duplicated rows
+
+```{r}
+# get row number of duplicated rows
+duplicated_rows = tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
+  filter(duplicated == T)
+
+# plot duplicated rows as black lines
+ggplot(duplicated_rows, aes(xintercept = row)) +
+  geom_vline(aes(xintercept = row)) + # plot a black line for each duplicated row
+  ggtitle("indexes of duplicated rows") + # add title
+  coord_flip() + # flip x and y axis
+  scale_x_reverse() # reverse x axis
+```
+
+---
+cleaning
+---
+nothing to clean
+
+```{r}
+
+```
+
+---
+additional variables
+---
+we can get the producer from the model name
+
+```{r}
+
+```
+
+---
+save processed data
+---
+
+no changes were made to data set
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
