@@ -24,7 +24,7 @@ observations
 ---
   
   - columns:   
-  | # | attribute | description / properties |                                                                                               
+  | # | Attribute | Description |                                                                                               
   |:-:|:---------:|:-----------------------------------------------------------:|
   | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
   | 2 | polymer_producer | string, unique identifier, name of producer |
