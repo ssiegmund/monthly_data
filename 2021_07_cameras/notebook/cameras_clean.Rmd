@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 ```
 
 ---
-H2 purpose of notebook
+## purpose of notebook
 ---
 
   - [x] initial look at data to get a basic understanding and gather todos  
@@ -20,7 +20,7 @@ H2 purpose of notebook
   - [ ] save pre-processed data set  
 
 ---
-### H3 observations
+## observations
 ---
   
   - column information:  
@@ -41,7 +41,7 @@ H2 purpose of notebook
   - added a variable which gives the percentage of the sup_waste from the produced polymers
                
 ---
-# H1 load packages
+## load packages
 ---
 ```{r load packages, message=FALSE}
 library(tidyverse) # tidy data frame
@@ -50,7 +50,7 @@ library(scrubr) # like dplyr but specifically for occurrence data
 ```
 
 ---
-# import data
+## import data
 ---
 ```{r}
 df_raw <- read_csv(file = '../data/camera_dataset.csv')
@@ -58,7 +58,7 @@ df <- df_raw
 ```
 
 ---
-# first look at data
+## first look at data
 ---
 ```{r}
 head(df_raw, 25)
@@ -71,7 +71,7 @@ summary(df_raw)
 ```
 
 ---
-# missing values
+## missing values
 ---
 
 missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
@@ -100,7 +100,7 @@ df <- df[-c(346, 347), ]
 ```
 
 ---
-# duplicated rows
+## duplicated rows
 ---
 
 no duplicated rows
@@ -119,7 +119,7 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 ```
 
 ---
-# cleaning
+## cleaning
 ---
 
 nothing to clean
@@ -129,7 +129,7 @@ nothing to clean
 ```
 
 ---
-# additional variables
+## additional variables
 ---
 
 we can get the producer from the model name
@@ -139,7 +139,7 @@ we can get the producer from the model name
 ```
 
 ---
-# save processed data
+## save processed data
 ---
 
 no changes were made to data set

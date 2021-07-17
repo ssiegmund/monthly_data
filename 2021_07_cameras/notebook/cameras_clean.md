@@ -8,7 +8,7 @@ output:
 
 
 ---
-H2 purpose of notebook
+## purpose of notebook
 ---
 
   - [x] initial look at data to get a basic understanding and gather todos  
@@ -16,7 +16,7 @@ H2 purpose of notebook
   - [ ] save pre-processed data set  
 
 ---
-### H3 observations
+## observations
 ---
   
   - column information:  
@@ -37,7 +37,7 @@ H2 purpose of notebook
   - added a variable which gives the percentage of the sup_waste from the produced polymers
                
 ---
-# H1 load packages
+## load packages
 ---
 
 ```r
@@ -47,7 +47,7 @@ library(scrubr) # like dplyr but specifically for occurrence data
 ```
 
 ---
-# import data
+## import data
 ---
 
 ```r
@@ -79,7 +79,7 @@ df <- df_raw
 ```
 
 ---
-# first look at data
+## first look at data
 ---
 
 ```r
@@ -165,7 +165,7 @@ summary(df_raw)
 ```
 
 ---
-# missing values
+## missing values
 ---
 
 missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
@@ -198,7 +198,7 @@ df <- df[-c(346, 347), ]
 ```
 
 ---
-# duplicated rows
+## duplicated rows
 ---
 
 no duplicated rows
@@ -220,7 +220,7 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 ![](nb_figs/clean_unnamed-chunk-8-1.png)<!-- -->
 
 ---
-# cleaning
+## cleaning
 ---
 
 nothing to clean
@@ -228,7 +228,7 @@ nothing to clean
 
 
 ---
-# additional variables
+## additional variables
 ---
 
 we can get the producer from the model name
@@ -236,7 +236,7 @@ we can get the producer from the model name
 
 
 ---
-# save processed data
+## save processed data
 ---
 
 no changes were made to data set
