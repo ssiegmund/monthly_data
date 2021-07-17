@@ -1,5 +1,5 @@
 ---
-title: "summary for plastic waste makers index data"
+title: "summary for camera data set"
 output: html_notebook
 ---
 

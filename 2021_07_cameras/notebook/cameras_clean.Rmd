@@ -1,7 +1,15 @@
 ---
-title: "cleaning for plastic waste makers index data"
-output: html_notebook
+title: "cleaning for camera data set"
+output: 
+  html_document:
+    keep_md: true
 ---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/clean_"
+)
+```
 
 ---
 purpose of notebook
