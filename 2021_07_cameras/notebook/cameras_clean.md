@@ -4,9 +4,10 @@ cleaning for camera data set
 ## purpose of notebook
 
 -   [x] initial look at data to get a basic understanding and gather
-    todos  
--   [ ] tidy up and cleaning of data set  
--   [ ] save pre-processed data set
+    todos -&gt; df\_raw
+-   [ ] tidy up and cleaning of data set -&gt; df
+-   [ ] all processing of the data set happens here and is saved to
+    pre-/processed csv-&gt; df
 
 ## observations
 
@@ -207,4 +208,6 @@ we can get the producer from the model name
 
 ## save processed data
 
-no changes were made to data set
+``` r
+write_csv(df, file = '../data/camera_dataset_processed.csv')
+```

@@ -1,17 +1,17 @@
 ---
 title: "summary for camera data set"
-output: html_notebook
+output: 
+  github_document:
+    fig_width: 14
+    fig_height: 10
 ---
 
----
-purpose of notebook
----
+## purpose of notebook
 
-  (i) summarize all insights and ideas from the other notebooks, as well as good exploratory plots
-  
----
-information
----
+  - [ ] summarize all insights and ideas from the other notebooks, as well as good exploratory plots
+   
+   
+## information
 
 found on: https://www.kaggle.com/crawford/1000-cameras-dataset/
   
@@ -22,49 +22,51 @@ with acknowledgements to:
 licensed under: Creative Commons Attribution-ShareAlike 3.0 License https://creativecommons.org/licenses/by-sa/3.0/
   
 Context: Some camera enthusiast went and described 1,000 cameras based on 13 properties!
+   
     
----
-domain information 
----
+## domain information 
 
- (i) The 13 properties of each camera:
-      Model
-      Release date
-      Max resolution
-      Low resolution
-      Effective pixels
-      Zoom wide (W)
-      Zoom tele (T)
-      Normal focus range
-      Macro focus range
-      Storage included
-      Weight (inc. batteries)
-      Dimensions
-      Price
+Content: The 13 properties of each camera  
+   1. Model  
+   2. Release date  
+   3. Max resolution  
+   4. Low resolution  
+   5. Effective pixels  
+   6. Zoom wide (W)  
+   7. Zoom tele (T)  
+   8. Normal focus range  
+   9. Macro focus range  
+   10. Storage included  
+   11. Weight (inc. batteries)  
+   12. Dimensions  
+   13. Price  
+
   
----
-summary highlights
----
+## summary highlights
   
 
 
----
-stories
----
+
+## stories
 
 
+ 
+ 
+## load packages
 
----
-load packages
----
-```{r load packages, setup, include=FALSE}
+```{r load packages, setup, message=FALSE}
 library(tidyverse) # tidy data frame
 library(plotly) # make ggplots interactive
 ```
 
----
-overview
----
+## import data
+
+```{r}
+df <- read_csv(file = '../data/camera_dataset_processed.csv')
+```
+
+## overview
+
 ```{r}
 head(df)
 ```
@@ -73,20 +75,18 @@ head(df)
 summary(df)
 ```
 
----
-observations from clean nb
----
+
+## observations from clean nb
 
 
 
----
-insights from describe uni
----
+
+## insights from describe uni
 
   
 
----
-insights from describe multi
----
+
+## insights from describe multi
+
 
 

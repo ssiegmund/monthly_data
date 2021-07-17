@@ -1,6 +1,9 @@
 ---
 title: "cleaning for camera data set"
-output: github_document
+output: 
+  github_document:
+    fig_width: 14
+    fig_height: 10
 ---
 
 ```{r, echo = FALSE}
@@ -9,11 +12,14 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+
 ## purpose of notebook
 
-  - [x] initial look at data to get a basic understanding and gather todos  
-  - [ ] tidy up and cleaning of data set  
-  - [ ] save pre-processed data set  
+  - [x] initial look at data to get a basic understanding and gather todos -> df_raw
+  - [ ] tidy up and cleaning of data set -> df
+  - [ ] all processing of the data set happens here and is saved to pre-/processed csv-> df
+ 
 
 ## observations
 
@@ -34,9 +40,10 @@ knitr::opts_chunk$set(
   - no changes were made to data set
   - added a variable which gives the percentage of the sup_waste from the produced polymers
                
+
 ## load packages
 
-```{r load packages, message=FALSE}
+```{r load packages, setup, message=FALSE}
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data
@@ -62,6 +69,7 @@ tail(df_raw)
 ```{r}
 summary(df_raw)
 ```
+
 
 ## missing values
 
@@ -90,6 +98,7 @@ ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing))
 df <- df[-c(346, 347), ]
 ```
 
+
 ## duplicated rows
 
 no duplicated rows
@@ -107,6 +116,7 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
   scale_x_reverse() # reverse x axis
 ```
 
+
 ## cleaning
 
 nothing to clean
@@ -114,6 +124,7 @@ nothing to clean
 ```{r}
 
 ```
+
 
 ## additional variables
 
@@ -123,27 +134,10 @@ we can get the producer from the model name
 
 ```
 
+
 ## save processed data
 
-no changes were made to data set
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+write_csv(df, file = '../data/camera_dataset_processed.csv')
+```
 
