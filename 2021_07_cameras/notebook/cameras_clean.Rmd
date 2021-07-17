@@ -25,7 +25,7 @@ observations
   
   - columns:   
   | # | Attribute | Description |                                                                                               
-  |:-:|:---------:|:-----------------------------------------------------------:|
+  |:---:|:---------:|:-----------------------------------------------------------:|
   | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
   | 2 | polymer_producer | string, unique identifier, name of producer |
   | 3 | no_of_assets  | numeric, metric, number of assets of the producer |
