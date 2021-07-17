@@ -1,8 +1,6 @@
 ---
 title: "cleaning for camera data set"
-output: 
-  html_document:
-    keep_md: true
+output: github_document
 ---
 
 ```{r, echo = FALSE}
@@ -11,18 +9,14 @@ knitr::opts_chunk$set(
 )
 ```
 
----
 ## purpose of notebook
----
 
   - [x] initial look at data to get a basic understanding and gather todos  
   - [ ] tidy up and cleaning of data set  
   - [ ] save pre-processed data set  
 
----
 ## observations
----
-  
+
   - column information:  
   
   |  # | Attribute | Description |                                                                                               
@@ -35,31 +29,30 @@ knitr::opts_chunk$set(
   | 6 | rigid_format_contribution_to_sup_waste | numeric, metric in million metric tons, rigid form of contribution to sup waste |
   | 7 | total_contribution_to_sup_waste | numeric, metric in million metric tons, total contribution is the sum of flexible and rigid |
   
-  - missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
+  - missing values are in rows 346 and 347, we will just drop them, since there is no need for the data set to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
   - no duplicated rows
   - no changes were made to data set
   - added a variable which gives the percentage of the sup_waste from the produced polymers
                
----
 ## load packages
----
+
 ```{r load packages, message=FALSE}
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data
 ```
 
----
+
 ## import data
----
+
 ```{r}
 df_raw <- read_csv(file = '../data/camera_dataset.csv')
 df <- df_raw
 ```
 
----
+
 ## first look at data
----
+
 ```{r}
 head(df_raw, 25)
 ```
@@ -70,9 +63,7 @@ tail(df_raw)
 summary(df_raw)
 ```
 
----
 ## missing values
----
 
 missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
 
@@ -99,9 +90,7 @@ ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing))
 df <- df[-c(346, 347), ]
 ```
 
----
 ## duplicated rows
----
 
 no duplicated rows
 
@@ -118,9 +107,7 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
   scale_x_reverse() # reverse x axis
 ```
 
----
 ## cleaning
----
 
 nothing to clean
 
@@ -128,9 +115,7 @@ nothing to clean
 
 ```
 
----
 ## additional variables
----
 
 we can get the producer from the model name
 
@@ -138,9 +123,7 @@ we can get the producer from the model name
 
 ```
 
----
 ## save processed data
----
 
 no changes were made to data set
 
