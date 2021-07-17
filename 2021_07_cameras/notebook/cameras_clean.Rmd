@@ -23,7 +23,24 @@ purpose of notebook
 observations
 ---
   
-  (i) columns: rank                                         numeric, ordered, unique, can serve as identifier, rank of producer according to index
+  (i) columns:   
+  | # | attribute | description / properties |                                                                                               
+  |:-:|:---------:|:-----------------------------------------------------------:|
+  | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
+| 2 |       Type      | The type of an event; examples are accident and congestion. |
+| 3 |     Severity    | The  severity is a value between 0 and 4, where 0 indicates the least impact  on traffic (i.e., short delay as a result of the event) and 4 indicates  a significant impact on traffic (i.e., long delay). |
+| 4 |       TMC       | Each traffic event has a Traffic Message Channel (TMC) code which provides a more detailed description on type of the event.                                                                               |
+| 5 |   Description   | The natural language description of an event.                                                                                                                                                              |
+| 6 | StartTime (UTC) | The start time of an event in UTC time zone.                                                                                                                                                               |
+| 7 |  EndTime (UTC)  | The end time of an event in UTC time zone.                                                                                                                                                                 |
+| 8 |     TimeZone    | The US-based timezone based on the location of an event (eastern, central, mountain, and pacific).                                                                                                         |
+| 9 |   LocationLat   | The latitude in GPS coordinate.                                                                                                                                                                            |
+| 10 |   LocationLng   | The longitude in GPS coordinate.                                                                                                                                                                           |
+| 11 |  Distance (mi)  | The length of the road extent affected by the event.                                                                                                                                                       |
+| 12 |   AirportCode   | The closest airport station to the location of a traffic event.                                                                                                                                            |
+| 13 |      Number     | The street number in address record.                                                                                                                                                                       |
+
+               rank                                         numeric, ordered, unique, can serve as identifier, rank of producer according to index
                polymer_producer                             string, unique identifier, name of producer
                no_of_assets                                 numeric, metric, number of assets of the producer
                production_of_in_scope_polymers              numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis
@@ -38,7 +55,7 @@ observations
 ---
 load packages
 ---
-```{r load packages, setup, include=FALSE}
+```{r load packages, setup}
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data

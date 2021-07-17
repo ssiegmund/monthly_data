@@ -1,5 +1,5 @@
 ---
-information for US wheater data set
+information for cameras data set
 ---
 found on:  
   https://www.kaggle.com/crawford/1000-cameras-dataset/
@@ -14,18 +14,18 @@ licensed under:
 Context
     Some camera enthusiast went and described 1,000 cameras based on 13 properties!
     
-Content
-   The 13 properties of each camera:
-    Model
-    Release date
-    Max resolution
-    Low resolution
-    Effective pixels
-    Zoom wide (W)
-    Zoom tele (T)
-    Normal focus range
-    Macro focus range
-    Storage included
-    Weight (inc. batteries)
-    Dimensions
-    Price
+Content  
+   The 13 properties of each camera:  
+    Model  
+    Release date  
+    Max resolution  
+    Low resolution  
+    Effective pixels  
+    Zoom wide (W)  
+    Zoom tele (T)  
+    Normal focus range  
+    Macro focus range  
+    Storage included  
+    Weight (inc. batteries)  
+    Dimensions  
+    Price  
