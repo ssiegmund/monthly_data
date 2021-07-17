@@ -8,7 +8,7 @@ output:
 
 
 ---
-purpose of notebook
+H2 purpose of notebook
 ---
 
   - [x] initial look at data to get a basic understanding and gather todos  
@@ -16,12 +16,13 @@ purpose of notebook
   - [ ] save pre-processed data set  
 
 ---
-observations
+### H3 observations
 ---
   
-  - columns:   
-  | # | Attribute | Description |                                                                                               
-  |:---:|:---------:|:-----------------------------------------------------------:|
+  - column information:  
+  
+  |  # | Attribute | Description |                                                                                               
+  |:--:|:---------:|:-----------------------------------------------------------:|
   | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
   | 2 | polymer_producer | string, unique identifier, name of producer |
   | 3 | no_of_assets  | numeric, metric, number of assets of the producer |
@@ -36,57 +37,17 @@ observations
   - added a variable which gives the percentage of the sup_waste from the produced polymers
                
 ---
-load packages
+# H1 load packages
 ---
 
 ```r
 library(tidyverse) # tidy data frame
-```
-
-```
-## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
-```
-
-```
-## v ggplot2 3.3.5     v purrr   0.3.4
-## v tibble  3.1.2     v dplyr   1.0.7
-## v tidyr   1.1.3     v stringr 1.4.0
-## v readr   1.4.0     v forcats 0.5.1
-```
-
-```
-## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()
-```
-
-```r
 library(lubridate) # functions to work with date-times and time-spans
-```
-
-```
-## 
-## Attaching package: 'lubridate'
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     date, intersect, setdiff, union
-```
-
-```r
 library(scrubr) # like dplyr but specifically for occurrence data
 ```
 
-```
-## Registered S3 method overwritten by 'hoardr':
-##   method           from
-##   print.cache_info httr
-```
-
 ---
-import data
+# import data
 ---
 
 ```r
@@ -118,7 +79,7 @@ df <- df_raw
 ```
 
 ---
-first look at data
+# first look at data
 ---
 
 ```r
@@ -204,8 +165,9 @@ summary(df_raw)
 ```
 
 ---
-missing values
+# missing values
 ---
+
 missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
 
 
@@ -236,8 +198,9 @@ df <- df[-c(346, 347), ]
 ```
 
 ---
-duplicated rows
+# duplicated rows
 ---
+
 no duplicated rows
 
 
@@ -257,21 +220,23 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 ![](nb_figs/clean_unnamed-chunk-8-1.png)<!-- -->
 
 ---
-cleaning
+# cleaning
 ---
+
 nothing to clean
 
 
 
 ---
-additional variables
+# additional variables
 ---
+
 we can get the producer from the model name
 
 
 
 ---
-save processed data
+# save processed data
 ---
 
 no changes were made to data set

@@ -171,7 +171,7 @@ pre code {
 <table>
 <tbody>
 <tr class="odd">
-<td>purpose of notebook</td>
+<td>H2 purpose of notebook</td>
 </tr>
 </tbody>
 </table>
@@ -188,49 +188,84 @@ save pre-processed data set</li>
 <table>
 <tbody>
 <tr class="odd">
-<td>observations</td>
+<td>### H3 observations</td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li><p>columns:<br />
-| # | Attribute | Description |<br />
-|:—:|:———:|:———————————————————–:| | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index | | 2 | polymer_producer | string, unique identifier, name of producer | | 3 | no_of_assets | numeric, metric, number of assets of the producer | | 4 | production_of_in_scope_polymers | numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis | | 5 | flexible_format_contribution_to_sup_waste | numeric, metric in million metric tons, flexible form of contribution to sup waste | | 6 | rigid_format_contribution_to_sup_waste | numeric, metric in million metric tons, rigid form of contribution to sup waste | | 7 | total_contribution_to_sup_waste | numeric, metric in million metric tons, total contribution is the sum of flexible and rigid |</p></li>
-<li><p>missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random</p></li>
-<li><p>no duplicated rows</p></li>
-<li><p>no changes were made to data set</p></li>
-<li><p>added a variable which gives the percentage of the sup_waste from the produced polymers</p></li>
+<li>column information:</li>
+</ul>
+<table>
+<colgroup>
+<col width="5%" />
+<col width="14%" />
+<col width="80%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">#</th>
+<th align="center">Attribute</th>
+<th align="center">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">1</td>
+<td align="center">rank</td>
+<td align="center">numeric, ordered, unique, can serve as identifier, rank of producer according to index</td>
+</tr>
+<tr class="even">
+<td align="center">2</td>
+<td align="center">polymer_producer</td>
+<td align="center">string, unique identifier, name of producer</td>
+</tr>
+<tr class="odd">
+<td align="center">3</td>
+<td align="center">no_of_assets</td>
+<td align="center">numeric, metric, number of assets of the producer</td>
+</tr>
+<tr class="even">
+<td align="center">4</td>
+<td align="center">production_of_in_scope_polymers</td>
+<td align="center">numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis</td>
+</tr>
+<tr class="odd">
+<td align="center">5</td>
+<td align="center">flexible_format_contribution_to_sup_waste</td>
+<td align="center">numeric, metric in million metric tons, flexible form of contribution to sup waste</td>
+</tr>
+<tr class="even">
+<td align="center">6</td>
+<td align="center">rigid_format_contribution_to_sup_waste</td>
+<td align="center">numeric, metric in million metric tons, rigid form of contribution to sup waste</td>
+</tr>
+<tr class="odd">
+<td align="center">7</td>
+<td align="center">total_contribution_to_sup_waste</td>
+<td align="center">numeric, metric in million metric tons, total contribution is the sum of flexible and rigid</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random</li>
+<li>no duplicated rows</li>
+<li>no changes were made to data set</li>
+<li>added a variable which gives the percentage of the sup_waste from the produced polymers</li>
 </ul>
 <table>
 <tbody>
 <tr class="odd">
-<td>load packages</td>
+<td># H1 load packages</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>library(tidyverse) # tidy data frame</code></pre>
-<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
-<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
-## v tibble  3.1.2     v dplyr   1.0.7
-## v tidyr   1.1.3     v stringr 1.4.0
-## v readr   1.4.0     v forcats 0.5.1</code></pre>
-<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(lubridate) # functions to work with date-times and time-spans</code></pre>
-<pre><code>## 
-## Attaching package: &#39;lubridate&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     date, intersect, setdiff, union</code></pre>
-<pre class="r"><code>library(scrubr) # like dplyr but specifically for occurrence data</code></pre>
-<pre><code>## Registered S3 method overwritten by &#39;hoardr&#39;:
-##   method           from
-##   print.cache_info httr</code></pre>
+<pre class="r"><code>library(tidyverse) # tidy data frame
+library(lubridate) # functions to work with date-times and time-spans
+library(scrubr) # like dplyr but specifically for occurrence data</code></pre>
 <table>
 <tbody>
 <tr class="odd">
-<td>import data</td>
+<td># import data</td>
 </tr>
 </tbody>
 </table>
@@ -256,7 +291,7 @@ save pre-processed data set</li>
 <table>
 <tbody>
 <tr class="odd">
-<td>first look at data</td>
+<td># first look at data</td>
 </tr>
 </tbody>
 </table>
@@ -324,35 +359,40 @@ save pre-processed data set</li>
 ##  3rd Qu.: 399.0  
 ##  Max.   :7999.0  
 ## </code></pre>
-<table style="width:6%;">
-<colgroup>
-<col width="5%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>missing values</th>
-</tr>
-</thead>
+<table>
 <tbody>
 <tr class="odd">
-<td>missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random</td>
-</tr>
-<tr class="even">
-<td>```r #create data frame with information on whether the value in each cell is missing missing_by_column &lt;- df_raw %&gt;% is.na %&gt;% # check is each cell is na as_tibble %&gt;% # convert to data frame mutate(row_number = 1:nrow(.)) %&gt;% # add a column with the row number gather(variable, is_missing, -row_number) # turn wide data into narrow data</td>
-</tr>
-<tr class="odd">
-<td># plot the missing values in our data frame ggplot(missing_by_column, aes(x = variable, y = row_number, fill = is_missing)) + geom_tile() + theme_minimal() + scale_fill_grey(name = &quot;“, labels = c(”present“,”missing“)) + theme(axis.text.x = element_text(angle=45, vjust=0.7, size=8)) + labs(x =”vairables in dataset“, y =”rows / observations&quot;) ```</td>
-</tr>
-<tr class="even">
-<td><img src="data:image/png;base64,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" /><!-- --></td>
-</tr>
-<tr class="odd">
-<td><code>r # drop the rows with missing values df &lt;- df[-c(346, 347), ]</code></td>
+<td># missing values</td>
 </tr>
 </tbody>
 </table>
-<div id="duplicated-rows" class="section level2">
-<h2>duplicated rows</h2>
+<p>missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random</p>
+<pre class="r"><code>#create data frame with information on whether the value in each cell is missing
+missing_by_column &lt;- df_raw %&gt;%
+  is.na %&gt;% # check is each cell is na
+  as_tibble %&gt;% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %&gt;% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = &quot;&quot;,
+                  labels = c(&quot;present&quot;, &quot;missing&quot;)) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=8)) +
+  labs(x = &quot;vairables in dataset&quot;,
+       y = &quot;rows / observations&quot;)</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code># drop the rows with missing values 
+df &lt;- df[-c(346, 347), ]</code></pre>
+<table>
+<tbody>
+<tr class="odd">
+<td># duplicated rows</td>
+</tr>
+</tbody>
+</table>
 <p>no duplicated rows</p>
 <pre class="r"><code># get row number of duplicated rows
 duplicated_rows = tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %&gt;%
@@ -365,34 +405,30 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
   coord_flip() + # flip x and y axis
   scale_x_reverse() # reverse x axis</code></pre>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
-<table style="width:6%;">
-<colgroup>
-<col width="5%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>cleaning</th>
-</tr>
-</thead>
+<table>
 <tbody>
 <tr class="odd">
-<td>nothing to clean</td>
+<td># cleaning</td>
 </tr>
 </tbody>
 </table>
-</div>
-<div id="additional-variables" class="section level2">
-<h2>additional variables</h2>
+<p>nothing to clean</p>
+<table>
+<tbody>
+<tr class="odd">
+<td># additional variables</td>
+</tr>
+</tbody>
+</table>
 <p>we can get the producer from the model name</p>
 <table>
 <tbody>
 <tr class="odd">
-<td>save processed data</td>
+<td># save processed data</td>
 </tr>
 </tbody>
 </table>
 <p>no changes were made to data set</p>
-</div>
 
 
 

@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 ```
 
 ---
-purpose of notebook
+H2 purpose of notebook
 ---
 
   - [x] initial look at data to get a basic understanding and gather todos  
@@ -20,12 +20,13 @@ purpose of notebook
   - [ ] save pre-processed data set  
 
 ---
-observations
+### H3 observations
 ---
   
-  - columns:   
-  | # | Attribute | Description |                                                                                               
-  |:---:|:---------:|:-----------------------------------------------------------:|
+  - column information:  
+  
+  |  # | Attribute | Description |                                                                                               
+  |:--:|:---------:|:-----------------------------------------------------------:|
   | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
   | 2 | polymer_producer | string, unique identifier, name of producer |
   | 3 | no_of_assets  | numeric, metric, number of assets of the producer |
@@ -40,16 +41,16 @@ observations
   - added a variable which gives the percentage of the sup_waste from the produced polymers
                
 ---
-load packages
+# H1 load packages
 ---
-```{r load packages, setup}
+```{r load packages, message=FALSE}
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data
 ```
 
 ---
-import data
+# import data
 ---
 ```{r}
 df_raw <- read_csv(file = '../data/camera_dataset.csv')
@@ -57,7 +58,7 @@ df <- df_raw
 ```
 
 ---
-first look at data
+# first look at data
 ---
 ```{r}
 head(df_raw, 25)
@@ -70,8 +71,9 @@ summary(df_raw)
 ```
 
 ---
-missing values
+# missing values
 ---
+
 missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
 
 ```{r}
@@ -98,8 +100,9 @@ df <- df[-c(346, 347), ]
 ```
 
 ---
-duplicated rows
+# duplicated rows
 ---
+
 no duplicated rows
 
 ```{r}
@@ -116,8 +119,9 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 ```
 
 ---
-cleaning
+# cleaning
 ---
+
 nothing to clean
 
 ```{r}
@@ -125,8 +129,9 @@ nothing to clean
 ```
 
 ---
-additional variables
+# additional variables
 ---
+
 we can get the producer from the model name
 
 ```{r}
@@ -134,7 +139,7 @@ we can get the producer from the model name
 ```
 
 ---
-save processed data
+# save processed data
 ---
 
 no changes were made to data set
