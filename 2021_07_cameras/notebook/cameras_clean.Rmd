@@ -1,8 +1,6 @@
 ---
 title: "cleaning for camera data set"
-output: 
-  html_document:
-    keep_md: true
+output: github_document
 ---
 
 ```{r, echo = FALSE}
