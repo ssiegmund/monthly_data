@@ -19,13 +19,17 @@ purpose of notebook
 observations
 ---
   
-  (i) columns: rank                                         numeric, ordered, unique, can serve as identifier, rank of producer according to index
-               polymer_producer                             string, unique identifier, name of producer
-               no_of_assets                                 numeric, metric, number of assets of the producer
-               production_of_in_scope_polymers              numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis
-               flexible_format_contribution_to_sup_waste    numeric, metric in million metric tons, flexible form of contribution to sup waste
-               rigid_format_contribution_to_sup_waste       numeric, metric in million metric tons, rigid form of contribution to sup waste
-               total_contribution_to_sup_waste              numeric, metric in million metric tons, total contribution is the sum of flexible and rigid
+  (i) columns:   
+  | # | attribute | description / properties |                                                                                               
+  |:-:|:---------:|:-----------------------------------------------------------:|
+  | 1 | rank | numeric, ordered, unique, can serve as identifier, rank of producer according to index |
+  | 2 | polymer_producer | string, unique identifier, name of producer |
+  | 3 | no_of_assets  | numeric, metric, number of assets of the producer |
+  | 4 | production_of_in_scope_polymers | numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis |
+  | 5 | flexible_format_contribution_to_sup_waste | numeric, metric in million metric tons, flexible form of contribution to sup waste |
+  | 6 | rigid_format_contribution_to_sup_waste | numeric, metric in million metric tons, rigid form of contribution to sup waste |
+  | 7 | total_contribution_to_sup_waste | numeric, metric in million metric tons, total contribution is the sum of flexible and rigid |
+  
   (i) missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
   (i) no duplicated rows
   (i) no changes were made to data set
@@ -35,6 +39,51 @@ observations
 load packages
 ---
 
+```r
+library(tidyverse) # tidy data frame
+```
+
+```
+## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+```
+
+```
+## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.2     v dplyr   1.0.7
+## v tidyr   1.1.3     v stringr 1.4.0
+## v readr   1.4.0     v forcats 0.5.1
+```
+
+```
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+```
+
+```r
+library(lubridate) # functions to work with date-times and time-spans
+```
+
+```
+## 
+## Attaching package: 'lubridate'
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     date, intersect, setdiff, union
+```
+
+```r
+library(scrubr) # like dplyr but specifically for occurrence data
+```
+
+```
+## Registered S3 method overwritten by 'hoardr':
+##   method           from
+##   print.cache_info httr
+```
 
 ---
 import data
