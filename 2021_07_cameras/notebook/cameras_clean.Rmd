@@ -25,21 +25,21 @@ knitr::opts_chunk$set(
 
   - column information:  
   
-  |  # | Attribute | Description |                                                                                               
-  |:--:|:---------:|:-----------------------------------------------------------:|
-  | 1 | Model | brand and model of the camera, chr, unique, can serve as identifier |
-  | 2 | Release date | release date of camera, time series, ordered, numerical |
-  | 3 | Max resolution | numerical, metric in number of pixel columns (width), maximal image resolution |
-  | 4 | Low resolution | numerical, metric in number of pixel columns (width), standard image resolution |
-  | 5 | Effective pixels | numerical, metric in megapixels, arbitrarily rounded, count of image pixel contributing to the final image |
-  | 6 | Zoom wide (W) | numerical, metric in mm, focal lengths that create a wide field of view beyond 35mm  |
-  | 7 | Zoom tele (T) | numerical, metric in mm, focal lengths that create a narrow field of view beyond 80mm |  
-  | 8 | Normal focus range | numerical, metric in mm, minimum distance at which focus can be obtained, feature of lense |  
-  | 9 | Macro focus range | numerical, metric in mm, reduced focus range (or working range) to focus on close objects |  
-  | 10 | Storage included | numerical, metric in megabyte, storage of included SD-card |  
-  | 11 | Weight (inc. batteries) | numerical, metric in g, weight of the camera including batteries |  
-  | 12 | Dimensions | numerical, metric in mm, width of the camera dimensions |  
-  | 13 | Price | numerical, metric in unknown currency, price when released |  
+  |  # | attribute | description & properties | missing values | dependent? |                                                                                              
+  |:--:|:---------:|:-----------------------------------------------------------:|:---:|:---:|
+  | 1 | Model | brand and model of the camera, chr, unique, can serve as identifier | non | no |
+  | 2 | Release date | release date of camera, time series, ordered, numerical | non | no |
+  | 3 | Max resolution | numerical, metric in number of pixel columns (width), maximal image resolution | almost non | no |
+  | 4 | Low resolution | numerical, metric in number of pixel columns (width), standard image resolution | some, not MAR, there is only max option | yes, capped by max resolution |
+  | 5 | Effective pixels | numerical, metric in megapixels, arbitrarily rounded, count of image pixel contributing to the final image | no | yes, directly by max resolution |
+  | 6 | Zoom wide (W) | numerical, metric in mm, focal lengths that create a wide field of view beyond 35mm | some, not MAR, professional cameras don't include lens | yes, by lens |
+  | 7 | Zoom tele (T) | numerical, metric in mm, focal lengths that create a narrow field of view beyond 80mm | some, not MAR, professional cameras don't include lens | yes, by lens |
+  | 8 | Normal focus range | numerical, metric in mm, minimum distance at which focus can be obtained, feature of lens | some, some MAR, professional cameras don't include lens | yes, by lens |
+  | 9 | Macro focus range | numerical, metric in mm, reduced focus range (or working range) to focus on close objects | some, some MAR, professional cameras don't include lens | yes, by lens |
+  | 10 | Storage included | numerical, metric in megabyte, storage of included SD-card | a few, not MAR, SD-card just not included | no |  
+  | 11 | Weight (inc. batteries) | numerical, metric in g, weight of the camera including batteries | a few, MAR | no |
+  | 12 | Dimensions | numerical, metric in mm, width of the camera dimensions | a few, MAR | no |
+  | 13 | Price | numerical, metric in unknown currency, price when released | non | no |
   
   - missing values are in rows 346 and 347, we will just drop them, since there is no need for the data set to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
   - no duplicated rows
@@ -79,12 +79,13 @@ summary(df_raw)
 
 ## missing values
 
-missing values are in rows 346 and 347, we will just drop them, since there is no need for the dataset to be complete (actually it is incomplete by nature), and there are still enough observations, also they seem to be missing at random 
+missing values with NA are in rows 346 and 347, but there are a lot more 0 which are mostly not missing at random (MAR), but some times they do, 
+later we will replace the 0 with NA, but for investigation not drop or impute them
 
-```{r}
-#create data frame with information on whether the value in each cell is missing
-missing_by_column <- df_raw %>%
-  is.na %>% # check is each cell is na
+```{r fig.height=20, fig.width=14}
+#create data frame with information on whether the value in each cell is zero
+tmp_df <- df_raw == 0
+missing_by_column <- tmp_df %>%
   as_tibble %>% # convert to data frame
   mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
   gather(variable, is_missing, -row_number) # turn wide data into narrow data
@@ -94,14 +95,10 @@ ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing))
   geom_tile() +
   theme_minimal() +
   scale_fill_grey(name = "",
-                  labels = c("present", "missing")) +
-  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=8)) +
+                  labels = c("present", "is zero", "is NA")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=12)) +
   labs(x = "vairables in dataset",
        y = "rows / observations")
-```
-```{r}
-# drop the rows with missing values 
-df <- df[-c(346, 347), ]
 ```
 
 
@@ -128,7 +125,7 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 nothing to clean
 
 ```{r}
-
+# mutate_all(~replace(., is.na(.), 0))
 ```
 
 
