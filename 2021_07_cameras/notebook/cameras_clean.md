@@ -5,8 +5,8 @@ cleaning for camera data set
 
 -   [x] initial look at data to get a basic understanding and gather
     todos -&gt; df\_raw
--   [ ] tidy up and cleaning of data set -&gt; df
--   [ ] all processing of the data set happens here and is saved to
+-   [x] tidy up and cleaning of data set -&gt; df
+-   [x] all processing of the data set happens here and is saved to
     pre-/processed csv-&gt; df
 
 ## observations
@@ -29,14 +29,21 @@ cleaning for camera data set
 | 12  |       Dimensions        |                          numerical, metric in mm, width of the camera dimensions                           |                       a few, MAR                        |               no                |
 | 13  |          Price          |                         numerical, metric in unknown currency, price when released                         |                           non                           |               no                |
 
--   missing values are in rows 346 and 347, we will just drop them,
-    since there is no need for the data set to be complete (actually it
-    is incomplete by nature), and there are still enough observations,
-    also they seem to be missing at random
+-   missing values with NA are in rows 346 and 347, but there are a lot
+    more 0 which are mostly not missing at random (MAR), but some times
+    they do, later we will replace the 0 with NA, but for investigation
+    not drop or impute them
 -   no duplicated rows
--   no changes were made to data set
--   added a variable which gives the percentage of the sup\_waste from
-    the produced polymers
+-   cleaning:
+    -   replace 0 with NA, since these entries would disturb the picture
+        of the data set otherwise, except for Effective pixels column
+    -   get clean column names with janitor package, without () and
+        white space
+    -   column Model serves as unique identifier, and thus can be set as
+        row name (number)
+-   added variables:
+    -   we can get the brand from the model name as a new variable
+        (categorical, no order)
 
 ## load packages
 
@@ -44,6 +51,7 @@ cleaning for camera data set
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data
+library(janitor) # expedite the initial data exploration and cleaning that comes with any new data set
 ```
 
 ## import data
@@ -186,7 +194,7 @@ no duplicated rows
 
 ``` r
 # get row number of duplicated rows
-duplicated_rows = tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
+duplicated_rows <- tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
   filter(duplicated == T)
 
 # plot duplicated rows as black lines
@@ -201,18 +209,69 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 
 ## cleaning
 
-nothing to clean
+replace 0 with NA, since these entries would disturb the picture of the
+data set otherwise, except for Effective pixels column  
+get clean column names with janitor package, without () and white
+space  
+column Model serves as unique identifier, and thus can be set as row
+name (number)
 
 ``` r
-# mutate_all(~replace(., is.na(.), 0))
+df[df == 0] <- NA # replace all 0 with NA
+
+df <- df %>%
+  mutate(`Effective pixels` = df_raw$`Effective pixels`) %>% # bring back the zeros for Effective pixels column
+  clean_names() %>% # get clean column names with janitor package
+  column_to_rownames(var = 'model') # set model columns as the row name
 ```
 
 ## additional variables
 
-we can get the producer from the model name
+we can get the brand from the model name as a new variable (categorical,
+no order)
+
+``` r
+df <- df %>%
+  mutate(brand = str_extract(df_raw$Model,"(\\w+)")) %>% # extract the first word of the model column, since this is the brand
+  relocate(brand) # relocate the brand column at the first position in the df
+```
+
+``` r
+# check results from cleaning and added variables
+head(df)
+```
+
+    ##                        brand release_date max_resolution low_resolution
+    ## Agfa ePhoto 1280        Agfa         1997           1024            640
+    ## Agfa ePhoto 1680        Agfa         1998           1280            640
+    ## Agfa ePhoto CL18        Agfa         2000            640             NA
+    ## Agfa ePhoto CL30        Agfa         1999           1152            640
+    ## Agfa ePhoto CL30 Clik!  Agfa         1999           1152            640
+    ## Agfa ePhoto CL45        Agfa         2001           1600            640
+    ##                        effective_pixels zoom_wide_w zoom_tele_t
+    ## Agfa ePhoto 1280                      0          38         114
+    ## Agfa ePhoto 1680                      1          38         114
+    ## Agfa ePhoto CL18                      0          45          45
+    ## Agfa ePhoto CL30                      0          35          35
+    ## Agfa ePhoto CL30 Clik!                0          43          43
+    ## Agfa ePhoto CL45                      1          51          51
+    ##                        normal_focus_range macro_focus_range storage_included
+    ## Agfa ePhoto 1280                       70                40                4
+    ## Agfa ePhoto 1680                       50                NA                4
+    ## Agfa ePhoto CL18                       NA                NA                2
+    ## Agfa ePhoto CL30                       NA                NA                4
+    ## Agfa ePhoto CL30 Clik!                 50                NA               40
+    ## Agfa ePhoto CL45                       50                20                8
+    ##                        weight_inc_batteries dimensions price
+    ## Agfa ePhoto 1280                        420         95   179
+    ## Agfa ePhoto 1680                        420        158   179
+    ## Agfa ePhoto CL18                         NA         NA   179
+    ## Agfa ePhoto CL30                         NA         NA   269
+    ## Agfa ePhoto CL30 Clik!                  300        128  1299
+    ## Agfa ePhoto CL45                        270        119   179
 
 ## save processed data
 
 ``` r
-write_csv(df, file = '../data/camera_dataset_processed.csv')
+df %>% rownames_to_column(var = 'model') %>% write_csv(file = '../data/camera_dataset_processed.csv')
 ```

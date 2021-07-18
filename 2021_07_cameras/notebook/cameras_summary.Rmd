@@ -6,6 +6,14 @@ output:
     fig_height: 10
 ---
 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/clean_"
+)
+```
+
+
+
 ## purpose of notebook
 
   - [ ] summarize all insights and ideas from the other notebooks, as well as good exploratory plots
@@ -66,7 +74,7 @@ library(plotly) # make ggplots interactive
 ## import data
 
 ```{r}
-df <- read_csv(file = '../data/camera_dataset_processed.csv')
+df <- read_csv(file = '../data/camera_dataset_processed.csv') %>% column_to_rownames(var = 'model')
 ```
 
 ## overview

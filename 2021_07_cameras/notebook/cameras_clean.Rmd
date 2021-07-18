@@ -17,8 +17,8 @@ knitr::opts_chunk$set(
 ## purpose of notebook
 
   - [x] initial look at data to get a basic understanding and gather todos -> df_raw
-  - [ ] tidy up and cleaning of data set -> df
-  - [ ] all processing of the data set happens here and is saved to pre-/processed csv-> df
+  - [x] tidy up and cleaning of data set -> df
+  - [x] all processing of the data set happens here and is saved to pre-/processed csv-> df
  
 
 ## observations
@@ -41,10 +41,14 @@ knitr::opts_chunk$set(
   | 12 | Dimensions | numerical, metric in mm, width of the camera dimensions | a few, MAR | no |
   | 13 | Price | numerical, metric in unknown currency, price when released | non | no |
   
-  - missing values are in rows 346 and 347, we will just drop them, since there is no need for the data set to be complete (actually it is incomplete by nature), and there are still       enough observations, also they seem to be missing at random 
+  - missing values with NA are in rows 346 and 347, but there are a lot more 0 which are mostly not missing at random (MAR), but some times they do, later we will replace the 0 with        NA, but for investigation not drop or impute them
   - no duplicated rows
-  - no changes were made to data set
-  - added a variable which gives the percentage of the sup_waste from the produced polymers
+  - cleaning: 
+    + replace 0 with NA, since these entries would disturb the picture of the data set otherwise, except for Effective pixels column
+    + get clean column names with janitor package, without () and white space
+    + column Model serves as unique identifier, and thus can be set as row name (number)
+  - added variables: 
+    + we can get the brand from the model name as a new variable (categorical, no order)
                
 
 ## load packages
@@ -53,6 +57,7 @@ knitr::opts_chunk$set(
 library(tidyverse) # tidy data frame
 library(lubridate) # functions to work with date-times and time-spans
 library(scrubr) # like dplyr but specifically for occurrence data
+library(janitor) # expedite the initial data exploration and cleaning that comes with any new data set
 ```
 
 
@@ -108,7 +113,7 @@ no duplicated rows
 
 ```{r}
 # get row number of duplicated rows
-duplicated_rows = tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
+duplicated_rows <- tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
   filter(duplicated == T)
 
 # plot duplicated rows as black lines
@@ -122,25 +127,39 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 
 ## cleaning
 
-nothing to clean
+replace 0 with NA, since these entries would disturb the picture of the data set otherwise, except for Effective pixels column  
+get clean column names with janitor package, without () and white space  
+column Model serves as unique identifier, and thus can be set as row name (number)  
 
 ```{r}
-# mutate_all(~replace(., is.na(.), 0))
+df[df == 0] <- NA # replace all 0 with NA
+
+df <- df %>%
+  mutate(`Effective pixels` = df_raw$`Effective pixels`) %>% # bring back the zeros for Effective pixels column
+  clean_names() %>% # get clean column names with janitor package
+  column_to_rownames(var = 'model') # set model columns as the row name
 ```
 
 
 ## additional variables
 
-we can get the producer from the model name
+we can get the brand from the model name as a new variable (categorical, no order)
 
 ```{r}
+df <- df %>%
+  mutate(brand = str_extract(df_raw$Model,"(\\w+)")) %>% # extract the first word of the model column, since this is the brand
+  relocate(brand) # relocate the brand column at the first position in the df
+```
 
+```{r}
+# check results from cleaning and added variables
+head(df)
 ```
 
 
 ## save processed data
 
 ```{r}
-write_csv(df, file = '../data/camera_dataset_processed.csv')
+df %>% rownames_to_column(var = 'model') %>% write_csv(file = '../data/camera_dataset_processed.csv')
 ```
 
