@@ -13,15 +13,21 @@ cleaning for camera data set
 
 -   column information:
 
-| \#  |                   Attribute                    |                                               Description                                               |
-|:---:|:----------------------------------------------:|:-------------------------------------------------------------------------------------------------------:|
-|  1  |                      rank                      |         numeric, ordered, unique, can serve as identifier, rank of producer according to index          |
-|  2  |               polymer\_producer                |                               string, unique identifier, name of producer                               |
-|  3  |                 no\_of\_assets                 |                            numeric, metric, number of assets of the producer                            |
-|  4  |      production\_of\_in\_scope\_polymers       | numeric, metric in million metric tons, production of plolymers that are in-scope of preceding analysis |
-|  5  | flexible\_format\_contribution\_to\_sup\_waste |           numeric, metric in million metric tons, flexible form of contribution to sup waste            |
-|  6  |  rigid\_format\_contribution\_to\_sup\_waste   |             numeric, metric in million metric tons, rigid form of contribution to sup waste             |
-|  7  |      total\_contribution\_to\_sup\_waste       |       numeric, metric in million metric tons, total contribution is the sum of flexible and rigid       |
+| \#  |        Attribute        |                                                Description                                                 |
+|:---:|:-----------------------:|:----------------------------------------------------------------------------------------------------------:|
+|  1  |          Model          |                    brand and model of the camera, chr, unique, can serve as identifier                     |
+|  2  |      Release date       |                          release date of camera, time series, ordered, numerical                           |
+|  3  |     Max resolution      |               numerical, metric in number of pixel columns (width), maximal image resolution               |
+|  4  |     Low resolution      |              numerical, metric in number of pixel columns (width), standard image resolution               |
+|  5  |    Effective pixels     | numerical, metric in megapixels, arbitrarily rounded, count of image pixel contributing to the final image |
+|  6  |      Zoom wide (W)      |            numerical, metric in mm, focal lengths that create a wide field of view beyond 35mm             |
+|  7  |      Zoom tele (T)      |           numerical, metric in mm, focal lengths that create a narrow field of view beyond 80mm            |
+|  8  |   Normal focus range    |         numerical, metric in mm, minimum distance at which focus can be obtained, feature of lense         |
+|  9  |    Macro focus range    |         numerical, metric in mm, reduced focus range (or working range) to focus on close objects          |
+| 10  |    Storage included     |                         numerical, metric in megabyte, storage of included SD-card                         |
+| 11  | Weight (inc. batteries) |                      numerical, metric in g, weight of the camera including batteries                      |
+| 12  |       Dimensions        |                          numerical, metric in mm, width of the camera dimensions                           |
+| 13  |          Price          |                         numerical, metric in unknown currency, price when released                         |
 
 -   missing values are in rows 346 and 347, we will just drop them,
     since there is no need for the data set to be complete (actually it

@@ -41,6 +41,10 @@ Content: The 13 properties of each camera
    12. Dimensions  
    13. Price  
 
+- https://en.wikipedia.org/wiki/Image_resolution
+- https://www.adorama.com/alc/wide-angle-vs-telephoto-which-lens-should-you-choose/
+- https://photo.stackexchange.com/questions/86323/what-does-it-mean-when-macro-focus-range-and-normal-focus-range-are-equal
+
   
 ## summary highlights
   
