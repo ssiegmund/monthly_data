@@ -162,10 +162,10 @@ summary(df_raw)
 
 ## missing values
 
-missing values with NA are in rows 346 and 347, but there are a lot more
-0 which are mostly not missing at random (MAR), but some times they do,
-later we will replace the 0 with NA, but for investigation not drop or
-impute them
+-   missing values with NA are in rows 346 and 347, but there are a lot
+    more 0 which are mostly not missing at random (MAR), but some times
+    they do, later we will replace the 0 with NA, but for investigation
+    not drop or impute them
 
 ``` r
 #create data frame with information on whether the value in each cell is zero
@@ -190,7 +190,7 @@ ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing))
 
 ## duplicated rows
 
-no duplicated rows
+-   no duplicated rows
 
 ``` r
 # get row number of duplicated rows
@@ -209,12 +209,12 @@ ggplot(duplicated_rows, aes(xintercept = row)) +
 
 ## cleaning
 
-replace 0 with NA, since these entries would disturb the picture of the
-data set otherwise, except for Effective pixels column  
-get clean column names with janitor package, without () and white
-space  
-column Model serves as unique identifier, and thus can be set as row
-name (number)
+-   replace 0 with NA, since these entries would disturb the picture of
+    the data set otherwise, except for Effective pixels column  
+-   get clean column names with janitor package, without () and white
+    space  
+-   column Model serves as unique identifier, and thus can be set as row
+    name (number)
 
 ``` r
 df[df == 0] <- NA # replace all 0 with NA
@@ -227,12 +227,12 @@ df <- df %>%
 
 ## additional variables
 
-we can get the brand from the model name as a new variable (categorical,
-no order)
+-   we can get the brand from the model name as a new variable
+    (categorical, no order)
 
 ``` r
 df <- df %>%
-  mutate(brand = str_extract(df_raw$Model,"(\\w+)")) %>% # extract the first word of the model column, since this is the brand
+  mutate(brand = str_extract(df_raw$Model,"(\\w+)")) %>% # extract the first word of the model column as brand name
   relocate(brand) # relocate the brand column at the first position in the df
 ```
 
