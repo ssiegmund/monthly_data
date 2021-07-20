@@ -4,8 +4,8 @@ author: "Sascha Siegmund"
 date: "`r Sys.Date()`"
 output: 
   github_document:
-    # fig_width: 14
-    # fig_height: 10
+    fig_width: 12.6
+    fig_height: 9
 ---
 
 ```{r, echo = FALSE}
@@ -103,7 +103,7 @@ p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FA
 
 # https://plotly.com/r/subplots/
 fig <- subplot(p1, p2, p3, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% 
-  layout(xaxis = list(title = name), autosize = TRUE)
+  layout(xaxis = list(title = name))
 
 fig
 ```
