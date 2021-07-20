@@ -27,25 +27,6 @@ library(plotly) # make ggplots interactive
 df <- read_csv(file = '../data/camera_dataset_processed.csv') %>% column_to_rownames(var = 'model')
 ```
 
-    ## 
-    ## -- Column specification --------------------------------------------------------
-    ## cols(
-    ##   model = col_character(),
-    ##   brand = col_character(),
-    ##   release_date = col_double(),
-    ##   max_resolution = col_double(),
-    ##   low_resolution = col_double(),
-    ##   effective_pixels = col_double(),
-    ##   zoom_wide_w = col_double(),
-    ##   zoom_tele_t = col_double(),
-    ##   normal_focus_range = col_double(),
-    ##   macro_focus_range = col_double(),
-    ##   storage_included = col_double(),
-    ##   weight_inc_batteries = col_double(),
-    ##   dimensions = col_double(),
-    ##   price = col_double()
-    ## )
-
 ## overview
 
 ``` r

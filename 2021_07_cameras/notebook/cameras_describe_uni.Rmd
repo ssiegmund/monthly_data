@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: 
   github_document:
     fig_width: 10
-    fig_height: 8
+    fig_height: 7
 ---
 
 ```{r, echo = FALSE}
@@ -39,7 +39,7 @@ library(plotly) # make ggplots interactive
 
 ## import data
 
-```{r}
+```{r, message=FALSE}
 df <- read_csv(file = '../data/camera_dataset_processed.csv') %>% column_to_rownames(var = 'model')
 ```
 
