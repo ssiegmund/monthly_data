@@ -4,7 +4,7 @@ author: "Sascha Siegmund"
 date: "`r Sys.Date()`"
 output: 
   github_document:
-    fig_width: 12.6
+    fig_width: 12
     fig_height: 9
 ---
 
