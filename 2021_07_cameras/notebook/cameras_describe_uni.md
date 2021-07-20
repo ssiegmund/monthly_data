@@ -173,7 +173,7 @@ p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FA
 
 # https://plotly.com/r/subplots/
 fig <- subplot(p1, p2, p3, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% 
-  layout(xaxis = list(title = name))
+  layout(xaxis = list(title = name), autosize = TRUE)
 
 fig
 ```
