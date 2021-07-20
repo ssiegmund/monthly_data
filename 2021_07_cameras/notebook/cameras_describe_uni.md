@@ -151,7 +151,7 @@ p1 <- tmp_df %>%
     # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
     theme_minimal() +
     scale_y_continuous(breaks = NULL) 
-p1 <- ggplotly(p1) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+p1 <- ggplotly(p1) %>% layout()
 
 p2 <- tmp_df %>%
   ggplot(aes(x = 1, y = value)) +
@@ -168,17 +168,17 @@ p3 <- tmp_df %>%
     geom_qq(alpha = 0.3) +
     geom_qq_line() +
     coord_flip() +
-    theme_minimal()
+    theme_minimal() 
 p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
 # https://plotly.com/r/subplots/
 fig <- subplot(p1, p2, p3, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% 
   layout(xaxis = list(title = name))
 
-# fig
+fig
 ```
 
-<iframe src="D:/projectCode/monthly_data/2021_07_cameras/notebook/index.html" width="100%" height="600" scrolling="no" seamless="seamless" frameBorder="0"></iframe>
+![](nb_figs/uni_unnamed-chunk-6-1.png)<!-- -->
 
 ## compare univariate …
 
