@@ -4,8 +4,8 @@ author: "Sascha Siegmund"
 date: "`r Sys.Date()`"
 output: 
   github_document:
-    fig_width: 14
-    fig_height: 10
+    fig_width: 10
+    fig_height: 7
 ---
 
 ```{r, echo = FALSE}
@@ -88,7 +88,7 @@ summary(df_raw)
 
 - missing values with NA are in rows 346 and 347, but there are a lot more 0 which are mostly not missing at random (MAR), but some times they do, later we will replace the 0 with NA, but for investigation not drop or impute them
 
-```{r fig.height=20, fig.width=14}
+```{r fig.height=20, fig.width=10}
 #create data frame with information on whether the value in each cell is zero
 tmp_df <- df_raw == 0
 missing_by_column <- tmp_df %>%
