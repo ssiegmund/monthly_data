@@ -1,5 +1,7 @@
 summary for camera data set
 ================
+Sascha Siegmund
+2021-07-20
 
 ## purpose of notebook
 

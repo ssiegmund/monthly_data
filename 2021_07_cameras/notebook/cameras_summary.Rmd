@@ -1,5 +1,7 @@
 ---
 title: "summary for camera data set"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
 output: 
   github_document:
     fig_width: 14
@@ -8,7 +10,7 @@ output:
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
-  fig.path = "nb_figs/clean_"
+  fig.path = "nb_figs/summary_"
 )
 ```
 
@@ -70,6 +72,7 @@ Content: The 13 properties of each camera
 library(tidyverse) # tidy data frame
 library(plotly) # make ggplots interactive
 ```
+
 
 ## import data
 

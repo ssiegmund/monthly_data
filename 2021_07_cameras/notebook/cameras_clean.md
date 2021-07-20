@@ -1,5 +1,7 @@
 cleaning for camera data set
 ================
+Sascha Siegmund
+2021-07-20
 
 ## purpose of notebook
 
@@ -16,7 +18,7 @@ cleaning for camera data set
 | \#  |        attribute        |                                          description & properties                                          |                     missing values                      |           dependent?            |
 |:---:|:-----------------------:|:----------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------:|:-------------------------------:|
 |  1  |          Model          |                    brand and model of the camera, chr, unique, can serve as identifier                     |                           non                           |               no                |
-|  2  |      Release date       |                          release date of camera, time series, ordered, numerical                           |                           non                           |               no                |
+|  2  |      Release date       |                release date of camera, time series and count, ordered, numerical, discrete                 |                           non                           |               no                |
 |  3  |     Max resolution      |               numerical, metric in number of pixel columns (width), maximal image resolution               |                       almost non                        |               no                |
 |  4  |     Low resolution      |              numerical, metric in number of pixel columns (width), standard image resolution               |         some, not MAR, there is only max option         |  yes, capped by max resolution  |
 |  5  |    Effective pixels     | numerical, metric in megapixels, arbitrarily rounded, count of image pixel contributing to the final image |                           no                            | yes, directly by max resolution |

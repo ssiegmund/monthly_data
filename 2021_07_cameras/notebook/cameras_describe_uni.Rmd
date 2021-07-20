@@ -1,0 +1,153 @@
+---
+title: "describe univariate for camera data set"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    keep_md: true
+    fig_width: 14
+    fig_height: 10
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/uni_"
+)
+```
+
+
+
+## purpose of notebook
+
+  - [ ] describe & visualize single variables (univariate)
+  - [ ] gather interesting observations for further investigation
+  - [ ] gather possible new features for extraction
+  
+  
+## insights 
+
+  - lorem
+
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+```
+
+
+## import data
+
+```{r}
+df <- read_csv(file = '../data/camera_dataset_processed.csv') %>% column_to_rownames(var = 'model')
+```
+
+
+## overview
+
+```{r}
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## univariate categorical brand
+
+- lorem
+
+```{r}
+# one variable, categorical x, show distribution
+```
+
+
+## univariate numeric release_date
+
+- uni release_date: with increasing year the number of cameras in the data also increase, almost linear, this could be a sign of more cameras available on the market or just from the data acquisition  
+- note on qq-plot with discrete: A staircase pattern is an inevitable side-effect of discreteness, but that is the only obvious limitation. The rule for quantile-quantile plots otherwise remains that departures from sameness of distributions are shown by departures from equality of quantiles. [see examples](https://stats.stackexchange.com/questions/113387/can-i-still-interpret-a-q-q-plot-that-uses-discrete-rounded-data) 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'release_date'
+tmp_df <- df %>% rename(value = release_date) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 1) +
+    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
+    theme_minimal() +
+    scale_y_continuous(breaks = NULL) 
+p1 <- ggplotly(p1) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    scale_y_continuous(breaks = NULL) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_qq.html 
+p3 <- tmp_df %>%
+  ggplot(aes(sample = value)) +
+    geom_qq(alpha = 0.3) +
+    geom_qq_line() +
+    coord_flip() +
+    theme_minimal()
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, p3, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## compare univariate ...
+
+- lorem
+
+```{r}
+# # two variables, both continuous x, compare distributions
+# name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
+# df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
+# 
+# boxplot <- df %>%
+#   ggplot(aes(x = name, y = value, colour = name)) +
+#     geom_boxplot() +
+#     theme_minimal() +
+#     coord_flip() +
+#     ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) +
+#     scale_y_continuous(breaks = NULL)
+# boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+# 
+# # https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+# dotplot <- df %>%
+#   ggplot(aes(x = value, fill = name)) +
+#     # geom_density() +
+#     geom_histogram(binwidth = 0.1, alpha = 0.5, position = "identity") +
+#     # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1, dotsize = 0.23, binwidth = 0.1) +
+#     theme_minimal() +
+#     scale_y_continuous(breaks = NULL)
+# dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+# 
+# # https://ggplot2.tidyverse.org/reference/geom_qq.html
+# plot_qq <- df %>%
+#   ggplot(aes(sample = value, colour = name)) +
+#     geom_qq(alpha = 0.5) +
+#     geom_qq_line(alpha = 0.5) +
+#     coord_flip() +
+#     theme_minimal()
+# plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+# 
+# # https://plotly.com/r/subplots/
+# fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+# 
+# fig
+```
