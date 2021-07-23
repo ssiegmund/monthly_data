@@ -60,13 +60,58 @@ summary(df)
 
 ```{r}
 # one variable, categorical x, show distribution
+name = 'brand'
+tmp_df <- df %>% rename(value = brand) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.85, 0.15), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+```{r}
+# one variable, categorical x, comparing the distribution of a variable against a hypothetical uniform distribution of that variable
+name = c('camera count', 'brand share')
+tmp_df <- df %>% rename(value = brand) %>% select(value)
+
+library(gglorenz) #transformations for plotting Lorenz curve, https://github.com/jjchern/gglorenz
+
+p1 <- tmp_df %>% 
+  ggplot(aes(as.numeric(fct_infreq(value)))) +
+    stat_lorenz(desc = FALSE) +
+    coord_fixed() +
+    geom_abline(linetype = 'dashed') +
+    theme_minimal() +
+    hrbrthemes::scale_x_percent() +
+    hrbrthemes::scale_y_percent() +
+    annotate_ineq(as.numeric(fct_infreq(tmp_df$value))) +
+    ggtitle(paste("Lorenz curve for", name[1], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(yaxis = list(title = paste("cumulative percentage of", name[1], sep=" ")), xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
+
+fig
 ```
 
 
 ## univariate numeric release_date
 
 - uni release_date: with increasing year the number of cameras in the data also increase, almost linear, this could be a sign of more cameras available on the market or just from the data acquisition  
-- note on qq-plot with discrete: A staircase pattern is an inevitable side-effect of discreteness, but that is the only obvious limitation. The rule for quantile-quantile plots otherwise remains that departures from sameness of distributions are shown by departures from equality of quantiles. [see examples](https://stats.stackexchange.com/questions/113387/can-i-still-interpret-a-q-q-plot-that-uses-discrete-rounded-data) 
+- note on qq-plot with discrete data: A staircase pattern is an inevitable side-effect of discreteness, but that is the only obvious limitation. The rule for quantile-quantile plots otherwise remains that departures from sameness of distributions are shown by departures from equality of quantiles. [see examples](https://stats.stackexchange.com/questions/113387/can-i-still-interpret-a-q-q-plot-that-uses-discrete-rounded-data) 
 
 ```{r}
 # one variable, continuous x, show distribution
@@ -79,8 +124,7 @@ p1 <- tmp_df %>%
     # geom_density() +
     geom_histogram(binwidth = 1) +
     # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
-    theme_minimal() +
-    scale_y_continuous(breaks = NULL) 
+    theme_minimal()  
 p1 <- ggplotly(p1) %>% layout()
 
 p2 <- tmp_df %>%
@@ -88,21 +132,11 @@ p2 <- tmp_df %>%
     geom_boxplot() +
     theme_minimal() +
     coord_flip() +
-    ggtitle(paste("distribution of", name, sep=" ")) +
-    scale_y_continuous(breaks = NULL) 
+    ggtitle(paste("distribution of", name, sep=" ")) 
 p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
 
-# https://ggplot2.tidyverse.org/reference/geom_qq.html 
-p3 <- tmp_df %>%
-  ggplot(aes(sample = value)) +
-    geom_qq(alpha = 0.3) +
-    geom_qq_line() +
-    coord_flip() +
-    theme_minimal() 
-p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
-
 # https://plotly.com/r/subplots/
-fig <- subplot(p1, p2, p3, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% 
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
   layout(xaxis = list(title = name))
 
 fig
