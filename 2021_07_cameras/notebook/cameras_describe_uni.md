@@ -1,7 +1,7 @@
 describe univariate for camera data set
 ================
 Sascha Siegmund
-2021-07-23
+2021-07-24
 
 ## purpose of notebook
 
@@ -11,7 +11,19 @@ Sascha Siegmund
 
 ## insights
 
--   lorem
+-   brand column shows the count of cameras per brand, over 50% are
+    produced by just 5 brands: Olympus, Sony, Canon, Kodak, Fujifilm
+-   uni release\_date: with increasing year the number of cameras in the
+    data also increase, almost linear, this could be a sign of more
+    cameras available on the market or just from the data acquisition
+-   comparing max\_resolution and low\_resolution shows that on median,
+    the max resolution is higher, but both have a big spike around 2560
+    (resp 2592)
+-   effective\_pixels range between 0 and 13, mostly around 4 to 6, with
+    two big spikes at 1 and 3
+-   zoom\_wide\_W and zoom\_tele\_t are really far spread out but mostly
+    centered around peaks, for zoom\_wide\_w its 28, 35, 38, for
+    zoom\_tele\_t its 105a nd 114
 
 ## load packages
 
@@ -101,7 +113,8 @@ summary(df)
 
 ## univariate categorical brand
 
--   lorem
+-   brand column shows the count of cameras per brand, over 50% are
+    produced by just 5 brands: Olympus, Sony, Canon, Kodak, Fujifilm
 
 ``` r
 # one variable, categorical x, show distribution
@@ -134,7 +147,8 @@ fig
 ![](nb_figs/uni_unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-# one variable, categorical x, comparing the distribution of a variable against a hypothetical uniform distribution of that variable
+# one variable, categorical x, 
+# comparing the distribution of a variable against a hypothetical uniform distribution of that variable
 name = c('camera count', 'brand share')
 tmp_df <- df %>% rename(value = brand) %>% select(value)
 
@@ -150,7 +164,9 @@ p1 <- tmp_df %>%
     hrbrthemes::scale_y_percent() +
     annotate_ineq(as.numeric(fct_infreq(tmp_df$value))) +
     ggtitle(paste("Lorenz curve for", name[1], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(yaxis = list(title = paste("cumulative percentage of", name[1], sep=" ")), xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
+fig <- ggplotly(p1) %>% 
+  layout(yaxis = list(title = paste("cumulative percentage of", name[1], sep=" ")), 
+         xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
 
 fig
 ```
@@ -161,13 +177,7 @@ fig
 
 -   uni release\_date: with increasing year the number of cameras in the
     data also increase, almost linear, this could be a sign of more
-    cameras available on the market or just from the data acquisition  
--   note on qq-plot with discrete data: A staircase pattern is an
-    inevitable side-effect of discreteness, but that is the only obvious
-    limitation. The rule for quantile-quantile plots otherwise remains
-    that departures from sameness of distributions are shown by
-    departures from equality of quantiles. [see
-    examples](https://stats.stackexchange.com/questions/113387/can-i-still-interpret-a-q-q-plot-that-uses-discrete-rounded-data)
+    cameras available on the market or just from the data acquisition
 
 ``` r
 # one variable, continuous x, show distribution
@@ -179,7 +189,6 @@ p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     # geom_density() +
     geom_histogram(binwidth = 1) +
-    # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1.1, dotsize = 1.2, binwidth = 1) +
     theme_minimal()  
 p1 <- ggplotly(p1) %>% layout()
 
@@ -200,47 +209,145 @@ fig
 
 ![](nb_figs/uni_unnamed-chunk-7-1.png)<!-- -->
 
-## compare univariate …
+## compare univariate max\_resolution and low\_resolution
 
--   lorem
+-   comparing max\_resolution and low\_resolution shows that on median,
+    the max resolution is higher, but both have a big spike around 2600
 
 ``` r
-# # two variables, both continuous x, compare distributions
-# name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste')
-# df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% 
-#   select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
-# 
-# boxplot <- df %>%
-#   ggplot(aes(x = name, y = value, colour = name)) +
-#     geom_boxplot() +
-#     theme_minimal() +
-#     coord_flip() +
-#     ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) +
-#     scale_y_continuous(breaks = NULL)
-# boxplot <- ggplotly(boxplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
-# 
-# # https://ggplot2.tidyverse.org/reference/geom_dotplot.html
-# dotplot <- df %>%
-#   ggplot(aes(x = value, fill = name)) +
-#     # geom_density() +
-#     geom_histogram(binwidth = 0.1, alpha = 0.5, position = "identity") +
-#     # geom_dotplot(method="histodot", stackgroups = TRUE, stackratio = 1, dotsize = 0.23, binwidth = 0.1) +
-#     theme_minimal() +
-#     scale_y_continuous(breaks = NULL)
-# dotplot <- ggplotly(dotplot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
-# 
-# # https://ggplot2.tidyverse.org/reference/geom_qq.html
-# plot_qq <- df %>%
-#   ggplot(aes(sample = value, colour = name)) +
-#     geom_qq(alpha = 0.5) +
-#     geom_qq_line(alpha = 0.5) +
-#     coord_flip() +
-#     theme_minimal()
-# plot_qq <- ggplotly(plot_qq) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
-# 
-# # https://plotly.com/r/subplots/
-# fig <- subplot(dotplot, boxplot, plot_qq, nrows = 3, margin = 0, heights = c(0.5, 0.2, 0.3), shareX = TRUE) %>% 
-#   layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
-# 
-# fig
+# two variables, both continuous x, compare distributions
+name = c('max_resolution', 'low_resolution')
+tmp_df <- df %>% rename(max_res = max_resolution, low_res = low_resolution) %>%
+  select(max_res, low_res) %>% pivot_longer(cols = c(max_res, low_res))
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+p1 <- tmp_df %>%
+  ggplot(aes(x = value, fill = name)) +
+    # geom_density(aes(colour = name), alpha = 0.5) +
+    geom_histogram(binwidth = 100, alpha = 0.5, position = "identity") +
+    theme_minimal() 
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>%
+  layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+
+fig
 ```
+
+![](nb_figs/uni_unnamed-chunk-8-1.png)<!-- -->
+
+## univariate numeric effective\_pixels
+
+-   effective\_pixels range between 0 and 13, mostly around 4 to 6, with
+    two big spikes at 1 and 3
+
+``` r
+# one variable, continuous x, show distribution
+name = 'effective_pixels'
+tmp_df <- df %>% rename(value = effective_pixels) %>% select(value)
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 1) +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-9-1.png)<!-- -->
+
+## compare univariate zoom\_wide\_w and zoom\_tele\_t
+
+-   zoom\_wide\_W and zoom\_tele\_t are really far spread out but mostly
+    centered around peaks, for zoom\_wide\_w its 28, 35, 38, for
+    zoom\_tele\_t its 105a nd 114
+
+``` r
+# two variables, both continuous x, compare distributions
+name = c('zoom_wide_w', 'zoom_tele_t')
+tmp_df <- df %>% rename(wide = zoom_wide_w, tele = zoom_tele_t) %>%
+  select(wide, tele) %>% pivot_longer(cols = c(wide, tele))
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+p1 <- tmp_df %>%
+  ggplot(aes(x = value, fill = name)) +
+    # geom_density(aes(colour = name), alpha = 0.5) +
+    geom_histogram(binwidth = 1, alpha = 0.5, position = "identity") +
+    theme_minimal() 
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>%
+  layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-10-1.png)<!-- -->
+
+## compare univariate normal\_focus\_range and macro\_focus\_range
+
+-   
+
+``` r
+# two variables, both continuous x, compare distributions
+name = c('normal_focus_range', 'macro_focus_range')
+tmp_df <- df %>% rename(normal = normal_focus_range, macro = macro_focus_range) %>%
+  select(normal, macro) %>% pivot_longer(cols = c(normal, macro))
+
+# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
+p1 <- tmp_df %>%
+  ggplot(aes(x = value, fill = name)) +
+    # geom_density(aes(colour = name), alpha = 0.5) +
+    geom_histogram(binwidth = 1, alpha = 0.5, position = "identity") +
+    theme_minimal() 
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>%
+  layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-11-1.png)<!-- -->
