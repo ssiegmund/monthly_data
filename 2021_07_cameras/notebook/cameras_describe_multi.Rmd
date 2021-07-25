@@ -59,7 +59,7 @@ summary(df)
 
 - 
 
-```{r fig.height=15, fig.width=10}
+```{r fig.height=12, fig.width=10}
 # two variables, continuous/discrete x, categorical y, show trend and distribution
 name = c('max_resolution', 'brand')
 tmp_df <- df %>% rename(x = brand, y = max_resolution) %>% select(x, y) %>% mutate(x = fct_infreq(x))
@@ -82,7 +82,7 @@ fig
 
 - 
 
-```{r fig.height=15, fig.width=10}
+```{r fig.height=12, fig.width=10}
 # two variables, continuous x, categorical y, show trend and distribution
 name = c('effective_pixels', 'brand')
 tmp_df <- df %>% rename(x = brand, y = effective_pixels) %>% select(x, y) %>% mutate(x = fct_infreq(x))
