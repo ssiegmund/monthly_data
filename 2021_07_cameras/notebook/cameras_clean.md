@@ -1,7 +1,7 @@
 cleaning for camera data set
 ================
 Sascha Siegmund
-2021-07-20
+2021-07-25
 
 ## purpose of notebook
 
@@ -183,7 +183,7 @@ ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing))
   theme_minimal() +
   scale_fill_grey(name = "",
                   labels = c("present", "is zero", "is NA")) +
-  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=12)) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10)) +
   labs(x = "vairables in dataset",
        y = "rows / observations")
 ```

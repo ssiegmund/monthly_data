@@ -1,29 +1,59 @@
 describe univariate for camera data set
 ================
 Sascha Siegmund
-2021-07-24
+2021-07-25
 
 ## purpose of notebook
 
--   [ ] describe & visualize single variables (univariate)
--   [ ] gather interesting observations for further investigation
--   [ ] gather possible new features for extraction
+-   [x] describe & visualize single variables (univariate)
+-   [x] gather interesting observations for further investigation
+-   [x] gather possible new features for extraction
 
 ## insights
 
 -   brand column shows the count of cameras per brand, over 50% are
     produced by just 5 brands: Olympus, Sony, Canon, Kodak, Fujifilm
+
 -   uni release\_date: with increasing year the number of cameras in the
     data also increase, almost linear, this could be a sign of more
     cameras available on the market or just from the data acquisition
+
 -   comparing max\_resolution and low\_resolution shows that on median,
     the max resolution is higher, but both have a big spike around 2560
     (resp 2592)
+
 -   effective\_pixels range between 0 and 13, mostly around 4 to 6, with
     two big spikes at 1 and 3
+
 -   zoom\_wide\_W and zoom\_tele\_t are really far spread out but mostly
     centered around peaks, for zoom\_wide\_w its 28, 35, 38, for
     zoom\_tele\_t its 105a nd 114
+
+-   normal\_focus\_range ranges mostly from 10 to 90 with only specific
+    values and peaks at 30, 40, 50, 60, 90, but also rare values in
+    between, macro\_focus\_range is centered around 7 with maximal 20 an
+    modus 10, but quite some values in between compared to
+    normal\_focus\_range
+
+-   uni storage\_included: most data range from 1 to 48 mb with spikes
+    at 8, 16, 32, but there are some big outliers, eg 450; not much
+    information in this column except for technological progress and
+    higher effective pixels require bigger storage, but these knowledge
+    we already have from other variables, so lets drop this column in
+    future
+
+-   uni weight\_inc\_batteries: ranging from 100g to 600g with median
+    230g, and a lot of outliers up to 1800g, distribution is left skewed
+
+-   uni dimensions: ranging from 60 to 150 with median 100, also a big
+    spike at 90, and some outliers up to 240
+
+-   uni price: range is 14 to 600, with median 200 and spikes at 120,
+    140, 220, and another isle at 400, outliers in the 1000 - 2000, but
+    up to 8000, left skewed distribution
+
+-   columns which can be dropped for future investigation:
+    low\_resolution, storage\_included
 
 ## load packages
 
@@ -220,7 +250,6 @@ name = c('max_resolution', 'low_resolution')
 tmp_df <- df %>% rename(max_res = max_resolution, low_res = low_resolution) %>%
   select(max_res, low_res) %>% pivot_longer(cols = c(max_res, low_res))
 
-# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
 p1 <- tmp_df %>%
   ggplot(aes(x = value, fill = name)) +
     # geom_density(aes(colour = name), alpha = 0.5) +
@@ -255,7 +284,6 @@ fig
 name = 'effective_pixels'
 tmp_df <- df %>% rename(value = effective_pixels) %>% select(value)
 
-# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     # geom_density() +
@@ -292,7 +320,6 @@ name = c('zoom_wide_w', 'zoom_tele_t')
 tmp_df <- df %>% rename(wide = zoom_wide_w, tele = zoom_tele_t) %>%
   select(wide, tele) %>% pivot_longer(cols = c(wide, tele))
 
-# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
 p1 <- tmp_df %>%
   ggplot(aes(x = value, fill = name)) +
     # geom_density(aes(colour = name), alpha = 0.5) +
@@ -319,7 +346,11 @@ fig
 
 ## compare univariate normal\_focus\_range and macro\_focus\_range
 
--   
+-   normal\_focus\_range ranges mostly from 10 to 90 with only specific
+    values and peaks at 30, 40, 50, 60, 90, but also rare values in
+    between, macro\_focus\_range is centered around 7 with maximal 20 an
+    modus 10, but quite some values in between compared to
+    normal\_focus\_range
 
 ``` r
 # two variables, both continuous x, compare distributions
@@ -327,7 +358,6 @@ name = c('normal_focus_range', 'macro_focus_range')
 tmp_df <- df %>% rename(normal = normal_focus_range, macro = macro_focus_range) %>%
   select(normal, macro) %>% pivot_longer(cols = c(normal, macro))
 
-# https://ggplot2.tidyverse.org/reference/geom_dotplot.html
 p1 <- tmp_df %>%
   ggplot(aes(x = value, fill = name)) +
     # geom_density(aes(colour = name), alpha = 0.5) +
@@ -351,3 +381,144 @@ fig
 ```
 
 ![](nb_figs/uni_unnamed-chunk-11-1.png)<!-- -->
+
+## univariate numeric storage\_included
+
+-   uni storage\_included: most data range from 1 to 48 mb with spikes
+    at 8, 16, 32, but there are some big outliers, eg 450; not much
+    information in this column except for technological progress and
+    higher effective pixels require bigger storage, but these knowledge
+    we already have from other variables, so lets drop this column in
+    future
+
+``` r
+# one variable, continuous x, show distribution
+name = 'storage_included'
+tmp_df <- df %>% rename(value = storage_included) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 1) +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-12-1.png)<!-- -->
+
+## univariate numeric weight\_inc\_batteries
+
+-   uni weight\_inc\_batteries: ranging from 100g to 600g with median
+    230g, and a lot of outliers up to 1800g, distribution is left skewed
+
+``` r
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 10) +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-13-1.png)<!-- -->
+
+## univariate numeric dimensions
+
+-   uni dimensions: ranging from 60 to 150 with median 100, also a big
+    spike at 90, and some outliers up to 240
+
+``` r
+# one variable, continuous x, show distribution
+name = 'dimensions'
+tmp_df <- df %>% rename(value = dimensions) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 10) +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-14-1.png)<!-- -->
+
+## univariate numeric price
+
+-   uni price: range is 14 to 600, with median 200 and spikes at 120,
+    140, 220, and another isle at 400, outliers in the 1000 - 2000, but
+    up to 8000, left skewed distribution
+
+``` r
+# one variable, continuous x, show distribution
+name = 'price'
+tmp_df <- df %>% rename(value = price) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_density() +
+    geom_histogram(binwidth = 20) +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-15-1.png)<!-- -->
