@@ -418,4 +418,110 @@ fig
 
 
 
+## experimental plot area
+
+- https://cran.r-project.org/web/packages/ggbeeswarm/vignettes/usageExamples.pdf
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_histogram(aes(y = ..density..), binwidth = 10) +
+    # geom_point(aes(y = n), alpha = 0.2) +
+    geom_spoke(aes(y = 0, angle = pi/2, radius = n), alpha = 0.5, lwd = 1, stat = "unique") +
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
+
+p3 <- tmp_df %>%
+  distinct(value) %>%
+  ggplot(aes(x = value)) +
+    stat_density(geom = 'line') + 
+    theme_minimal()
+p3 <- ggplotly(p3) %>% layout()
+
+p3
+```
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
+
+library(ggbeeswarm)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_quasirandom(aes(y = 0), groupOnX=FALSE, width = max(tmp_df$n), alpha = 0.25, bandwidth = 1/length(unique(tmp_df$value))) +
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_histogram(aes(y = ..density..), binwidth = 10) +
+    # geom_point(aes(y = n), alpha = 0.2) +
+    geom_spoke(aes(y = -n, angle = pi/2, radius = 2*n), alpha = 0.5, lwd = 1, stat = "unique") +
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
 
