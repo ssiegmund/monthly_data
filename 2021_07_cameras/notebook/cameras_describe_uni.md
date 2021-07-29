@@ -1,7 +1,7 @@
 describe univariate for camera data set
 ================
 Sascha Siegmund
-2021-07-28
+2021-07-29
 
 ## purpose of notebook
 
@@ -239,6 +239,36 @@ fig
 
 ![](nb_figs/uni_unnamed-chunk-7-1.png)<!-- -->
 
+``` r
+# one variable, continuous x, show distribution
+name = 'release_date'
+tmp_df <- df %>% rename(value = release_date) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-8-1.png)<!-- -->
+
 ## compare univariate max\_resolution and low\_resolution
 
 -   comparing max\_resolution and low\_resolution shows that on median,
@@ -272,7 +302,39 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-8-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-9-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = c('max_resolution', 'low_resolution')
+tmp_df <- df %>% rename(max_res = max_resolution, low_res = low_resolution) %>%
+  select(max_res, low_res) %>% pivot_longer(cols = c(max_res, low_res)) %>% 
+  add_count(value, name)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value, fill = name, color = name)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = name, y = value, color = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" "))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>%
+  layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-10-1.png)<!-- -->
 
 ## univariate numeric effective\_pixels
 
@@ -306,7 +368,37 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-9-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = 'effective_pixels'
+tmp_df <- df %>% rename(value = effective_pixels) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-12-1.png)<!-- -->
 
 ## compare univariate zoom\_wide\_w and zoom\_tele\_t
 
@@ -342,7 +434,39 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-10-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-13-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = c('zoom_wide_w', 'zoom_tele_t')
+tmp_df <- df %>% rename(wide = zoom_wide_w, tele = zoom_tele_t) %>%
+  select(wide, tele) %>% pivot_longer(cols = c(wide, tele)) %>% 
+  add_count(name, value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value, fill = name, color = name)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = name, y = value, color = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" "))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>%
+  layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-14-1.png)<!-- -->
 
 ## compare univariate normal\_focus\_range and macro\_focus\_range
 
@@ -380,7 +504,39 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-11-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-15-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = c('normal_focus_range', 'macro_focus_range')
+tmp_df <- df %>% rename(normal = normal_focus_range, macro = macro_focus_range) %>%
+  select(normal, macro) %>% pivot_longer(cols = c(normal, macro)) %>% 
+  add_count(name, value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value, fill = name, color = name)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = name, y = value, color = name)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("compare ", name[1], "and", name[2], sep=" "))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>%
+  layout(xaxis = list(title = paste(name[1], "<br>", name[2], sep="")))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-16-1.png)<!-- -->
 
 ## univariate numeric storage\_included
 
@@ -418,7 +574,37 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-12-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-17-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = 'storage_included'
+tmp_df <- df %>% rename(value = storage_included) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-18-1.png)<!-- -->
 
 ## univariate numeric weight\_inc\_batteries
 
@@ -452,7 +638,37 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-13-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-19-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-20-1.png)<!-- -->
 
 ## univariate numeric dimensions
 
@@ -486,7 +702,37 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-14-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-21-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = 'dimensions'
+tmp_df <- df %>% rename(value = dimensions) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-22-1.png)<!-- -->
 
 ## univariate numeric price
 
@@ -521,23 +767,55 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-15-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-23-1.png)<!-- -->
+
+``` r
+# one variable, continuous x, show distribution
+name = 'price'
+tmp_df <- df %>% rename(value = price) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-24-1.png)<!-- -->
 
 ## experimental plot area
 
 -   <https://cran.r-project.org/web/packages/ggbeeswarm/vignettes/usageExamples.pdf>
+-   <https://stackoverflow.com/questions/32533356/is-there-a-way-to-make-the-density-function-in-r-use-counts-vs-probability>
 
 ``` r
 # one variable, continuous x, show distribution
 name = 'weight_inc_batteries'
 tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
 
+tmp_sum_n <- tmp_df %>% distinct(value, .keep_all = TRUE) %>% select(n)
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     # geom_histogram(aes(y = ..density..), binwidth = 10) +
     # geom_point(aes(y = n), alpha = 0.2) +
     geom_spoke(aes(y = 0, angle = pi/2, radius = n), alpha = 0.5, lwd = 1, stat = "unique") +
-    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') +
+    stat_density(aes(y = ..density..* nrow(tmp_df %>% distinct) * density(tmp_df$value, na.rm = TRUE)$bw), geom = 'line') +
     theme_minimal()  
 p1 <- ggplotly(p1) %>% layout()
 
@@ -556,7 +834,7 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-16-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-25-1.png)<!-- -->
 
 ``` r
 # one variable, continuous x, show distribution
@@ -573,7 +851,7 @@ p3 <- ggplotly(p3) %>% layout()
 p3
 ```
 
-![](nb_figs/uni_unnamed-chunk-17-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 # one variable, continuous x, show distribution
@@ -604,7 +882,7 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-18-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-27-1.png)<!-- -->
 
 ``` r
 # one variable, continuous x, show distribution
@@ -613,10 +891,10 @@ tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_
 
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
-    # geom_histogram(aes(y = ..density..), binwidth = 10) +
-    # geom_point(aes(y = n), alpha = 0.2) +
-    geom_spoke(aes(y = -n, angle = pi/2, radius = 2*n), alpha = 0.5, lwd = 1, stat = "unique") +
-    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+  # ..density.. * sum(tmp_df$n) or ..scaled.. * max(tmp_df$n) or ..density.. * nrow(tmp_df) * density(tmp_df$value)$bw or ..count..
     theme_minimal()  
 p1 <- ggplotly(p1) %>% layout()
 
@@ -635,4 +913,46 @@ fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TR
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-19-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-28-1.png)<!-- -->
+
+``` r
+# dat <- c(rnorm(100), rnorm(100,5))
+# dat <- c(rbinom(500, 100, 0.4), rpois(500, 25))
+# dat <- c(rbinom(500, 100, 0.4), rnorm(1000,5))
+dat <- c(rbinom(100, 10, 0.3), rnorm(100,4), rep(25, 5), rep(10, 5))
+
+
+name = 'weight_inc_batteries'
+tmp_df <- as.tibble(dat) %>% rename(value = value) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    # geom_histogram(aes(y = ..density..), binwidth = 10) +
+    # geom_point(aes(y = n), alpha = 0.2) +
+    geom_spoke(aes(y = -n, angle = pi/2, radius = 2*n), alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') + # or ..scaled.. * max(tmp_df$n)
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+sum(tmp_df$n)
+```
+
+    ## [1] 2286
+
+``` r
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-29-1.png)<!-- -->
