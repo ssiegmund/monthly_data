@@ -1,7 +1,7 @@
 describe univariate for camera data set
 ================
 Sascha Siegmund
-2021-07-29
+2021-07-30
 
 ## purpose of notebook
 
@@ -247,7 +247,7 @@ tmp_df <- df %>% rename(value = release_date) %>% select(value) %>% add_count(va
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -314,7 +314,7 @@ tmp_df <- df %>% rename(max_res = max_resolution, low_res = low_resolution) %>%
 p1 <- tmp_df %>%
   ggplot(aes(x = value, fill = name, color = name)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -378,7 +378,7 @@ tmp_df <- df %>% rename(value = effective_pixels) %>% add_count(value)
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -446,7 +446,7 @@ tmp_df <- df %>% rename(wide = zoom_wide_w, tele = zoom_tele_t) %>%
 p1 <- tmp_df %>%
   ggplot(aes(x = value, fill = name, color = name)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -516,7 +516,7 @@ tmp_df <- df %>% rename(normal = normal_focus_range, macro = macro_focus_range) 
 p1 <- tmp_df %>%
   ggplot(aes(x = value, fill = name, color = name)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -584,7 +584,7 @@ tmp_df <- df %>% rename(value = storage_included) %>% select(value) %>% add_coun
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -648,7 +648,7 @@ tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -712,7 +712,7 @@ tmp_df <- df %>% rename(value = dimensions) %>% select(value) %>% add_count(valu
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -777,7 +777,7 @@ tmp_df <- df %>% rename(value = price) %>% select(value) %>% add_count(value)
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -892,7 +892,7 @@ tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_
 p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
-               alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
   # ..density.. * sum(tmp_df$n) or ..scaled.. * max(tmp_df$n) or ..density.. * nrow(tmp_df) * density(tmp_df$value)$bw or ..count..
     theme_minimal()  
@@ -916,6 +916,71 @@ fig
 ![](nb_figs/uni_unnamed-chunk-28-1.png)<!-- -->
 
 ``` r
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value) %>% na.omit()
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-29-1.png)<!-- -->
+
+``` r
+(max(tmp_df$value)-min(tmp_df$value))
+```
+
+    ## [1] 1760
+
+``` r
+# one variable, continuous x, show distribution
+name = 'weight_inc_batteries'
+tmp_df <- df %>% rename(value = weight_inc_batteries) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_point(aes(y = n), alpha = 0.5, stat = 'unique') +
+    stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+![](nb_figs/uni_unnamed-chunk-30-1.png)<!-- -->
+
+``` r
 # dat <- c(rnorm(100), rnorm(100,5))
 # dat <- c(rbinom(500, 100, 0.4), rpois(500, 25))
 # dat <- c(rbinom(500, 100, 0.4), rnorm(1000,5))
@@ -929,7 +994,8 @@ p1 <- tmp_df %>%
   ggplot(aes(x = value)) +
     # geom_histogram(aes(y = ..density..), binwidth = 10) +
     # geom_point(aes(y = n), alpha = 0.2) +
-    geom_spoke(aes(y = -n, angle = pi/2, radius = 2*n), alpha = 0.5, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    geom_spoke(aes(y = -n, angle = pi/2, radius = 2*n), 
+               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line') + # or ..scaled.. * max(tmp_df$n)
     theme_minimal()  
 p1 <- ggplotly(p1) %>% layout()
@@ -946,13 +1012,7 @@ p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FA
 fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
   layout(xaxis = list(title = name))
 
-sum(tmp_df$n)
-```
-
-    ## [1] 2286
-
-``` r
 fig
 ```
 
-![](nb_figs/uni_unnamed-chunk-29-1.png)<!-- -->
+![](nb_figs/uni_unnamed-chunk-31-1.png)<!-- -->

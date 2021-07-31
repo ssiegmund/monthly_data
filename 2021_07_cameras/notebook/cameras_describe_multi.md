@@ -1,7 +1,7 @@
 describe univariate for camera data set
 ================
 Sascha Siegmund
-2021-07-25
+2021-07-31
 
 ## purpose of notebook
 
@@ -124,6 +124,27 @@ fig
 
 ![](nb_figs/multi_unnamed-chunk-5-1.png)<!-- -->
 
+``` r
+# two variables, continuous/discrete x, categorical y, show trend and distribution
+name = c('max_resolution', 'brand')
+tmp_df <- df %>% rename(x = brand, y = max_resolution) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
+  add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
+               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    coord_flip() +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+![](nb_figs/multi_unnamed-chunk-6-1.png)<!-- -->
+
 ## bivariate numeric effective\_pixels over categorical brand
 
 -   
@@ -146,7 +167,122 @@ fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-6-1.png)<!-- -->
+![](nb_figs/multi_unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+# two variables, continuous/discrete x, categorical y, show trend and distribution
+name = c('effective_pixels', 'brand')
+tmp_df <- df %>% rename(x = brand, y = effective_pixels) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
+  add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
+               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    coord_flip() +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+![](nb_figs/multi_unnamed-chunk-8-1.png)<!-- -->
+
+## bivariate numeric weight\_inc\_batteries over categorical brand
+
+-   
+
+``` r
+# two variables, continuous/discrete x, categorical y, show trend and distribution
+name = c('weight_inc_batteries', 'brand')
+tmp_df <- df %>% rename(x = brand, y = weight_inc_batteries) %>% select(x, y) %>% mutate(x = fct_infreq(x))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(aes(color = x), alpha = I(0.5), width = 0.2, height = 0.1) + # for continuous x
+    geom_count(aes(color = x), alpha = I(0.5)) +  # for discrete x
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    coord_flip() +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+![](nb_figs/multi_unnamed-chunk-9-1.png)<!-- -->
+
+``` r
+# two variables, continuous/discrete x, categorical y, show trend and distribution
+name = c('weight_inc_batteries', 'brand')
+tmp_df <- df %>% rename(x = brand, y = weight_inc_batteries) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
+  add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
+               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    coord_flip() +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+![](nb_figs/multi_unnamed-chunk-10-1.png)<!-- -->
+
+## bivariate numeric price over categorical brand
+
+-   
+
+``` r
+# two variables, continuous/discrete x, categorical y, show trend and distribution
+name = c('price', 'brand')
+tmp_df <- df %>% rename(x = brand, y = price) %>% select(x, y) %>% mutate(x = fct_infreq(x))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(aes(color = x), alpha = I(0.5), width = 0.2, height = 0.1) + # for continuous x
+    geom_count(aes(color = x), alpha = I(0.5)) +  # for discrete x
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    coord_flip() +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+![](nb_figs/multi_unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+# two variables, continuous/discrete x, categorical y, show trend and distribution
+name = c('price', 'brand')
+tmp_df <- df %>% rename(x = brand, y = price) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
+  add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
+               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    coord_flip() +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+![](nb_figs/multi_unnamed-chunk-12-1.png)<!-- -->
+
+## bivariate numeric … over numeric …
+
+-   
 
 ``` r
 # # two variables, continuous x, continuous y, show trend and distribution
