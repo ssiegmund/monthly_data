@@ -5,8 +5,8 @@ Sascha Siegmund
 
 ## purpose of notebook
 
--   [ ] describe & visualize relationship between variables
-    (multivariate)
+-   [ ] describe & visualize relationship between variables, one of them
+    time-like
 -   [ ] gather interesting observations for further investigation
 -   [ ] gather possible new features for extraction
 
@@ -100,259 +100,174 @@ summary(df)
     ##  Max.   :7999.0  
     ## 
 
-## bivariate numeric max\_resolution over categorical brand
+## univariate numeric max\_resolution over time release\_date
 
 -   
 
 ``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('max_resolution', 'brand')
-tmp_df <- df %>% rename(x = brand, y = max_resolution) %>% select(x, y) %>% mutate(x = fct_infreq(x))
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('max_resolution', 'release_date')
+tmp_df <- df %>% rename(t = release_date, y = max_resolution) %>% select(t, y) %>% 
+  add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
 
 p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    # geom_jitter(aes(color = x), alpha = I(0.5), width = 0.2, height = 0.1) + # for continuous x
-    geom_count(aes(color = x), alpha = I(0.5)) +  # for discrete x
+  ggplot(aes(x = t, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
-    coord_flip() +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') + 
     theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
 
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-5-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('max_resolution', 'brand')
-tmp_df <- df %>% rename(x = brand, y = max_resolution) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
-  add_count(x, y)
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('max_resolution', 'release_date')
+tmp_df <- df %>% rename(t = release_date, y = max_resolution) %>% select(t, y) %>% 
+  distinct(t, .keep_all = TRUE) %>% # distinct only for testing same code for single y per t
+  add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
 
 p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
+  ggplot(aes(x = t, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
-    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
-    coord_flip() +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') +
     theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
 
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-6-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-6-1.png)<!-- -->
 
-## bivariate numeric effective\_pixels over categorical brand
+## univariate numeric weight\_inc\_batteries over time release\_date
 
 -   
 
 ``` r
-# two variables, continuous x, categorical y, show trend and distribution
-name = c('effective_pixels', 'brand')
-tmp_df <- df %>% rename(x = brand, y = effective_pixels) %>% select(x, y) %>% mutate(x = fct_infreq(x))
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('weight_inc_batteries', 'release_date')
+tmp_df <- df %>% rename(t = release_date, y = weight_inc_batteries) %>% select(t, y) %>% 
+  add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
 
 p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    # geom_jitter(aes(color = x), alpha = I(0.5), width = 0.2, height = 0.1) + # for continuous x
-    geom_count(aes(color = x), alpha = I(0.5)) +  # for discrete x
+  ggplot(aes(x = t, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
-    coord_flip() +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') +
     theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
 
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-7-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-7-1.png)<!-- -->
 
-``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('effective_pixels', 'brand')
-tmp_df <- df %>% rename(x = brand, y = effective_pixels) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
-  add_count(x, y)
-
-p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    geom_boxplot(fill=NA, lwd = 0.25) +
-    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
-    coord_flip() +
-    theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
-
-fig
-```
-
-![](nb_figs/multi_unnamed-chunk-8-1.png)<!-- -->
-
-## bivariate numeric weight\_inc\_batteries over categorical brand
+## univariate numeric price over time release\_date
 
 -   
 
 ``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('weight_inc_batteries', 'brand')
-tmp_df <- df %>% rename(x = brand, y = weight_inc_batteries) %>% select(x, y) %>% mutate(x = fct_infreq(x))
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('price', 'release_date')
+tmp_df <- df %>% rename(t = release_date, y = price) %>% select(t, y) %>% 
+  add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
 
 p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    # geom_jitter(aes(color = x), alpha = I(0.5), width = 0.2, height = 0.1) + # for continuous x
-    geom_count(aes(color = x), alpha = I(0.5)) +  # for discrete x
+  ggplot(aes(x = t, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
-    coord_flip() +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') + 
     theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
 
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-9-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-8-1.png)<!-- -->
 
-``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('weight_inc_batteries', 'brand')
-tmp_df <- df %>% rename(x = brand, y = weight_inc_batteries) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
-  add_count(x, y)
-
-p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    geom_boxplot(fill=NA, lwd = 0.25) +
-    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
-    coord_flip() +
-    theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
-
-fig
-```
-
-![](nb_figs/multi_unnamed-chunk-10-1.png)<!-- -->
-
-## bivariate numeric price over categorical brand
+## univariate numeric dimensions over time release\_date
 
 -   
 
 ``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('price', 'brand')
-tmp_df <- df %>% rename(x = brand, y = price) %>% select(x, y) %>% mutate(x = fct_infreq(x))
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('dimensions', 'release_date')
+tmp_df <- df %>% rename(t = release_date, y = dimensions) %>% select(t, y) %>% 
+  add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
 
 p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    # geom_jitter(aes(color = x), alpha = I(0.5), width = 0.2, height = 0.1) + # for continuous x
-    geom_count(aes(color = x), alpha = I(0.5)) +  # for discrete x
+  ggplot(aes(x = t, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
-    coord_flip() +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') + 
     theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
 
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-11-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-9-1.png)<!-- -->
 
-``` r
-# two variables, continuous/discrete x, categorical y, show trend and distribution
-name = c('price', 'brand')
-tmp_df <- df %>% rename(x = brand, y = price) %>% select(x, y) %>% mutate(x = fct_infreq(x)) %>% 
-  add_count(x, y)
-
-p1 <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    geom_boxplot(fill=NA, lwd = 0.25) +
-    geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
-    coord_flip() +
-    theme_minimal() +
-    ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
-fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
-
-fig
-```
-
-![](nb_figs/multi_unnamed-chunk-12-1.png)<!-- -->
-
-## bivariate numeric max\_resolution over numeric weight\_inc\_batteries
+## bivariate numeric max\_resolution over numeric price over time release date
 
 -   
 
 ``` r
 # two variables, continuous x, continuous y, show trend and distribution
-name = c('weight_inc_batteries', 'max_resolution')
-tmp_df <- df %>% rename(x = weight_inc_batteries, y = max_resolution) %>% select(x, y)
+name = c('price', 'max_resolution', 'release_date')
+tmp_df <- df %>% rename(t = release_date, x = price, y = max_resolution) %>% select(t, x, y) %>%  
+  add_count(x, y) %>% arrange(t)
 
-# https://ggplot2.tidyverse.org/reference/geom_smooth.html
-point_plot <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    # geom_jitter(alpha = 0.5, size = 1) +
-    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
-    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
-    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
-    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
-    theme_minimal() +
-    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
-point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
-
-x_density_plot <- tmp_df %>%
-  ggplot(aes(x = x)) +
-    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
-    # geom_histogram(binwidth = 1) +
-    theme_minimal()
-x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), 
-                                                      xaxis = list(showticklabels = FALSE, showgrid = FALSE))
-
-y_density_plot <- tmp_df %>%
-  ggplot(aes(x = y)) +
-    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
-    # geom_histogram(binwidth = 1) +
-    coord_flip() +
-    theme_minimal()
-y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), 
-                                                      xaxis = list(showticklabels = FALSE, showgrid = FALSE))
-
-# https://ggplot2.tidyverse.org/reference/geom_quantile.html
-qualtile_plot <- tmp_df %>%
-  ggplot(aes(x = x, y = y)) +
-    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
-    theme_minimal()
-qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
-
-# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
-sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, 
-                heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% 
-  layout()
-sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
-fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
-  layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
-
-fig
-```
-
-![](nb_figs/multi_unnamed-chunk-13-1.png)<!-- -->
-
-``` r
-# two variables, continuous x, continuous y, show trend and distribution
-name = c('weight_inc_batteries', 'max_resolution')
-tmp_df <- df %>% rename(x = weight_inc_batteries, y = max_resolution) %>% select(x, y) %>% add_count(x, y)
 
 p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_segment(aes(xend = c(tail(x, n=-1), NA), yend = c(tail(y, n=-1), NA), color = t), lwd=0.4, alpha=0.7) +
+    viridis::scale_color_viridis(name = name[3], option = 'H') +
     geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
-    geom_density2d(alpha = 0.5, bins = 4) +
-    # geom_quantile(alpha = 0.4) +
-    # geom_smooth(fill = "grey90") +
     theme_minimal() +
     ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
 p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
@@ -397,27 +312,21 @@ fig <- subplot(p2, plotly_empty(), plotly_empty(),
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-14-1.png)<!-- -->
-
-## bivariate numeric max\_resolution over numeric weight\_inc\_batteries
-
--   
+![](nb_figs/time_unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 # two variables, continuous x, continuous y, show trend and distribution
-name = c('low_resolution', 'max_resolution')
-tmp_df <- df %>% rename(x = low_resolution, y = max_resolution) %>% select(x, y) %>% add_count(x, y)
+name = c('price', 'max_resolution', 'release_date')
+tmp_df <- df %>% filter(brand == 'Epson')  # filter for testing purpose
+tmp_df <- tmp_df %>% rename(t = release_date, x = price, y = max_resolution) %>% select(t, x, y) %>%  
+  add_count(x, y) %>% arrange(t)
+
 
 p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_segment(aes(xend = c(tail(x, n=-1), NA), yend = c(tail(y, n=-1), NA), color = t), lwd=0.4, alpha=0.7) +
+    viridis::scale_color_viridis(name = name[3], option = 'H') +
     geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
-    geom_density2d(alpha = 0.5, bins = 4) +
-    # geom_quantile(alpha = 0.4) +
-    # geom_smooth(fill = "grey90") +
     theme_minimal() +
     ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
 p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
@@ -462,27 +371,24 @@ fig <- subplot(p2, plotly_empty(), plotly_empty(),
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-15-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-11-1.png)<!-- -->
 
-## bivariate numeric max\_resolution over numeric price
+## bivariate numeric max\_resolution over numeric low\_resolution over time release date
 
 -   
 
 ``` r
 # two variables, continuous x, continuous y, show trend and distribution
-name = c('price', 'max_resolution')
-tmp_df <- df %>% rename(x = price, y = max_resolution) %>% select(x, y) %>% add_count(x, y)
+name = c('max_resolution', 'low_resolution', 'release_date')
+tmp_df <- df %>% rename(t = release_date, x = max_resolution, y = low_resolution) %>% select(t, x, y) %>%  
+  add_count(x, y) %>% arrange(t)
+
 
 p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_segment(aes(xend = c(tail(x, n=-1), NA), yend = c(tail(y, n=-1), NA), color = t), lwd=0.4, alpha=0.7) +
+    viridis::scale_color_viridis(name = name[3], option = 'H') +
     geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
-    geom_density2d(alpha = 0.5, bins = 4) +
-    # geom_quantile(alpha = 0.4) +
-    # geom_smooth(fill = "grey90") +
     theme_minimal() +
     ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
 p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
@@ -527,27 +433,24 @@ fig <- subplot(p2, plotly_empty(), plotly_empty(),
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-16-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-12-1.png)<!-- -->
 
-## bivariate numeric normal\_focus\_range over numeric macro\_focus\_range
+## bivariate numeric normal\_focus\_range over numeric macro\_focus\_range over time release date
 
 -   
 
 ``` r
 # two variables, continuous x, continuous y, show trend and distribution
-name = c('normal_focus_range', 'macro_focus_range')
-tmp_df <- df %>% rename(x = normal_focus_range, y = macro_focus_range) %>% select(x, y) %>% add_count(x, y)
+name = c('normal_focus_range', 'macro_focus_range', 'release_date')
+tmp_df <- df %>% rename(t = release_date, x = normal_focus_range, y = macro_focus_range) %>% select(t, x, y) %>%  
+  add_count(x, y) %>% arrange(t)
+
 
 p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
-    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
-    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_segment(aes(xend = c(tail(x, n=-1), NA), yend = c(tail(y, n=-1), NA), color = t), lwd=0.4, alpha=0.7) +
+    viridis::scale_color_viridis(name = name[3], option = 'H') +
     geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
-    geom_density2d(alpha = 0.5, bins = 4) +
-    # geom_quantile(alpha = 0.4) +
-    # geom_smooth(fill = "grey90") +
     theme_minimal() +
     ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
 p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
@@ -592,4 +495,66 @@ fig <- subplot(p2, plotly_empty(), plotly_empty(),
 fig
 ```
 
-![](nb_figs/multi_unnamed-chunk-17-1.png)<!-- -->
+![](nb_figs/time_unnamed-chunk-13-1.png)<!-- -->
+
+## bivariate numeric dimensions over numeric max\_resolution over time release date
+
+-   
+
+``` r
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('max_resolution', 'dimensions', 'release_date')
+tmp_df <- df %>% rename(t = release_date, x = max_resolution, y = dimensions) %>% select(t, x, y) %>%  
+  add_count(x, y) %>% arrange(t)
+
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_segment(aes(xend = c(tail(x, n=-1), NA), yend = c(tail(y, n=-1), NA), color = t), lwd=0.4, alpha=0.7) +
+    viridis::scale_color_viridis(name = name[3], option = 'H') +
+    geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + 
+    theme_minimal()
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p3 <- tmp_df %>%
+  ggplot(aes(x = 1, y = x)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() 
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p4 <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + 
+    coord_flip() +
+    theme_minimal()
+p4 <- ggplotly(p4) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p5 <- tmp_df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() 
+p5 <- ggplotly(p5) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+fig <- subplot(p2, plotly_empty(), plotly_empty(),
+               p3, plotly_empty(), plotly_empty(),
+               p1, p5, p4, 
+               nrows = 3, margin = 0, heights = c(0.1, 0.035, 0.865), widths = c(0.92, 0.02, 0.06), 
+               shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE) %>% layout()
+
+fig
+```
+
+![](nb_figs/time_unnamed-chunk-14-1.png)<!-- -->

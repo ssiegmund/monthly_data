@@ -11,7 +11,8 @@ output:
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
   fig.path = "nb_figs/multi_",
-  warning = FALSE
+  warning = FALSE,
+  message=FALSE
 )
 ```
 
@@ -219,58 +220,311 @@ fig
 ```
 
 
-## bivariate numeric ... over numeric ...
+## bivariate numeric max_resolution over numeric weight_inc_batteries
 
 -
 
 ```{r}
-# # two variables, continuous x, continuous y, show trend and distribution
-# name = c('rank', 'no_of_assets')
-# df <- plastic %>% rename(x = rank, y = no_of_assets) %>% select(x, y) %>% mutate(x = -x) # x = -x to show rank as increasing from low to high 
-# 
-# # https://ggplot2.tidyverse.org/reference/geom_smooth.html
-# point_plot <- df %>%
-#   ggplot(aes(x = x, y = y)) +
-#     # geom_jitter(alpha = 0.5, size = 1) +
-#     geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
-#     geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
-#     geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
-#     geom_point(alpha = 0.75) + # point geom is used to create scatterplots
-#     theme_minimal() +
-#     ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
-# point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
-# 
-# x_density_plot <- df %>%
-#   ggplot(aes(x = x)) +
-#     stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
-#     # geom_histogram(binwidth = 1) +
-#     theme_minimal() 
-# x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
-# 
-# y_density_plot <- df %>%
-#   ggplot(aes(x = y)) +
-#     stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
-#     # geom_histogram(binwidth = 1) +
-#     coord_flip() +
-#     theme_minimal() 
-# y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
-# 
-# # https://ggplot2.tidyverse.org/reference/geom_quantile.html
-# qualtile_plot <- df %>%
-#   ggplot(aes(x = x, y = y)) +
-#     geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
-#     theme_minimal() 
-# qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
-# 
-# # merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
-# sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
-# sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
-# fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
-#   
-# fig
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('weight_inc_batteries', 'max_resolution')
+tmp_df <- df %>% rename(x = weight_inc_batteries, y = max_resolution) %>% select(x, y)
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal()
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), 
+                                                      xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal()
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), 
+                                                      xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal()
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, 
+                heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% 
+  layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.1), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('weight_inc_batteries', 'max_resolution')
+tmp_df <- df %>% rename(x = weight_inc_batteries, y = max_resolution) %>% select(x, y) %>% add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
+    geom_density2d(alpha = 0.5, bins = 4) +
+    # geom_quantile(alpha = 0.4) +
+    # geom_smooth(fill = "grey90") +
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + 
+    theme_minimal()
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p3 <- tmp_df %>%
+  ggplot(aes(x = 1, y = x)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() 
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p4 <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + 
+    coord_flip() +
+    theme_minimal()
+p4 <- ggplotly(p4) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p5 <- tmp_df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() 
+p5 <- ggplotly(p5) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+fig <- subplot(p2, plotly_empty(), plotly_empty(),
+               p3, plotly_empty(), plotly_empty(),
+               p1, p5, p4, 
+               nrows = 3, margin = 0, heights = c(0.1, 0.035, 0.865), widths = c(0.92, 0.02, 0.06), 
+               shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE) %>% layout()
+
+fig
 ```
 
 
+## bivariate numeric max_resolution over numeric weight_inc_batteries
+
+-
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('low_resolution', 'max_resolution')
+tmp_df <- df %>% rename(x = low_resolution, y = max_resolution) %>% select(x, y) %>% add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) + 
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
+    geom_density2d(alpha = 0.5, bins = 4) +
+    # geom_quantile(alpha = 0.4) +
+    # geom_smooth(fill = "grey90") +
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + 
+    theme_minimal()
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p3 <- tmp_df %>%
+  ggplot(aes(x = 1, y = x)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() 
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p4 <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + 
+    coord_flip() +
+    theme_minimal()
+p4 <- ggplotly(p4) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p5 <- tmp_df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() 
+p5 <- ggplotly(p5) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+fig <- subplot(p2, plotly_empty(), plotly_empty(),
+               p3, plotly_empty(), plotly_empty(),
+               p1, p5, p4, 
+               nrows = 3, margin = 0, heights = c(0.1, 0.035, 0.865), widths = c(0.92, 0.02, 0.06), 
+               shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE) %>% layout()
+
+fig
+```
+
+
+## bivariate numeric max_resolution over numeric price
+
+-
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('price', 'max_resolution')
+tmp_df <- df %>% rename(x = price, y = max_resolution) %>% select(x, y) %>% add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
+    geom_density2d(alpha = 0.5, bins = 4) +
+    # geom_quantile(alpha = 0.4) +
+    # geom_smooth(fill = "grey90") +
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + 
+    theme_minimal()
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p3 <- tmp_df %>%
+  ggplot(aes(x = 1, y = x)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() 
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p4 <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + 
+    coord_flip() +
+    theme_minimal()
+p4 <- ggplotly(p4) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p5 <- tmp_df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() 
+p5 <- ggplotly(p5) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+fig <- subplot(p2, plotly_empty(), plotly_empty(),
+               p3, plotly_empty(), plotly_empty(),
+               p1, p5, p4, 
+               nrows = 3, margin = 0, heights = c(0.1, 0.035, 0.865), widths = c(0.92, 0.02, 0.06), 
+               shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE) %>% layout()
+
+fig
+```
+
+
+## bivariate numeric normal_focus_range over numeric macro_focus_range
+
+-
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('normal_focus_range', 'macro_focus_range')
+tmp_df <- df %>% rename(x = normal_focus_range, y = macro_focus_range) %>% select(x, y) %>% add_count(x, y)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
+    geom_vline(aes(xintercept = quantile(tmp_df$x, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[2]), color = 'blue', alpha = 0.25) +
+    geom_hline(aes(yintercept = quantile(tmp_df$y, na.rm = TRUE)[4]), color = 'blue', alpha = 0.25) +
+    geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
+    geom_density2d(alpha = 0.5, bins = 4) +
+    # geom_quantile(alpha = 0.4) +
+    # geom_smooth(fill = "grey90") +
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + 
+    theme_minimal()
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p3 <- tmp_df %>%
+  ggplot(aes(x = 1, y = x)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() 
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p4 <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + 
+    coord_flip() +
+    theme_minimal()
+p4 <- ggplotly(p4) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p5 <- tmp_df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() 
+p5 <- ggplotly(p5) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+fig <- subplot(p2, plotly_empty(), plotly_empty(),
+               p3, plotly_empty(), plotly_empty(),
+               p1, p5, p4, 
+               nrows = 3, margin = 0, heights = c(0.1, 0.035, 0.865), widths = c(0.92, 0.02, 0.06), 
+               shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE) %>% layout()
+
+fig
+```
 
 
 

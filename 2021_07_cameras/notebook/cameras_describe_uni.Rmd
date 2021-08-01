@@ -11,7 +11,8 @@ output:
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
   fig.path = "nb_figs/uni_",
-  warning = FALSE
+  warning = FALSE,
+  message=FALSE
 )
 ```
 
