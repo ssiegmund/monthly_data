@@ -121,7 +121,7 @@ p1 <- tmp_df %>%
     stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
-               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') + 
+               alpha = I(0.4), lwd = 1, stat = 'unique', color = 'darkgreen') + 
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
@@ -149,7 +149,7 @@ p1 <- tmp_df %>%
     stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
-               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') +
+               alpha = I(0.4), lwd = 1, stat = 'unique', color = 'darkgreen') +
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
@@ -180,7 +180,7 @@ p1 <- tmp_df %>%
     stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
-               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') +
+               alpha = I(0.4), lwd = 1, stat = 'unique', color = 'darkgreen') +
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
@@ -211,7 +211,7 @@ p1 <- tmp_df %>%
     stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
-               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') + 
+               alpha = I(0.4), lwd = 1, stat = 'unique', color = 'darkgreen') + 
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
@@ -242,7 +242,7 @@ p1 <- tmp_df %>%
     stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
-               alpha = I(0.5), lwd = 1, stat = 'unique', color = 'darkgreen') + 
+               alpha = I(0.4), lwd = 1, stat = 'unique', color = 'darkgreen') + 
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
