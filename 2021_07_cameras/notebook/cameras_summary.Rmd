@@ -12,7 +12,7 @@ output:
 knitr::opts_chunk$set(
   fig.path = "nb_figs/summary_",
   warning = FALSE,
-  message=FALSE
+  message = FALSE
 )
 ```
 
