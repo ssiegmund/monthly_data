@@ -1,0 +1,847 @@
+---
+title: "discover and transform plastic waste makers index data"
+output: html_notebook
+---
+
+---
+purpose of notebook
+---
+
+  (-) test and play with advanced numerical EDA methods
+  
+todos:
+  (-) ...
+  
+---
+information
+---
+
+name: makeovermonday_2021w22
+link: https://data.world/makeovermonday/2021w22
+title: 2021/W22: The Plastic Waste Makers Index
+Data Source: [Minderoo](https://www.minderoo.org/plastic-waste-makers-index/data/indices/producers/) from 2019
+  
+---
+insights 
+---
+
+  (i) correlation - most of the columns are highly correlated, that was to be expected, since most variables are depend on each other, e.g., rigid + flexible = total c production,                         total -> -rank
+                    rigid overall has a less strong correlation with the other variables, which might hint to there being a a different sub-population based on rigid production, 
+                    flexible has a stronger correlation with total as rigid and total, since flexible is a far bigger contribution to total
+                    flexible has a stronger correlation with the overall production, than rigid, this is interesting and also might hint to rigid producers have a different market                        strategy than flexible producers
+  (i) a Gini coefficient of 0.56 is quite high, which means that only a top few producers are responsible for a large amount of the total SUP waste contribution, in other words 10%         are responsible for 44% of the waste
+  (i) I need more knowledge how to work with and interpret SOM and PCA, maybe also not enough observations in data set,                           
+      but the clustering from SOM, when only independent variables are used, actually show the two assumed subpopulations based on rigid vs flexible production
+  (i) parallel coordinate plot is not very insightful, since there is so much data close together, we cannot see any grouping without prior knowledge, only hint is when you zoom in at       the bulk of the data in the lower third (y direction), there is a negative correlation
+  (i) remind that the difference with the partition by k-means is that for hierarchical clustering, the number of classes is not specified in advance   
+      it seems that most clusters are confused by some specific values (81, 63, 72, 36?), are they some sort of outlier, or what is special about them?
+  (i) As a reminder, this method aims at partitioning n observations into k clusters in which each observation belongs to the cluster with the closest average, serving as a prototype       of the cluster
+      works not quite as well as SOM, but very close, also recommend cluster is three, but closely followed by 2, since 3 does not reveal any significant connection right now, I            wonder what that shows
+      
+---
+references
+---
+  
+  (i) https://iamciera.github.io/SOMexample/html/SOM_RNAseq_tutorial_part2a_SOM.html
+  (i) https://statsandr.com/blog/clustering-analysis-k-means-and-hierarchical-clustering-by-hand-and-in-r/#optimal-number-of-clusters
+  (i) https://lukedaniels1.github.io/Bio381_2018/Daniels_Cluster_Analysis_Lecture.html
+  (i) https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+      
+---
+load packages & global options
+---
+```{r, setup, include=FALSE}
+library(tidyverse) # tidy data frame
+library(ggthemes) # for extra plot themes
+library(plotly) # make ggplots interactive
+
+library(factoextra) # provides some easy-to-use functions to extract and visualize the output of multivariate data analyses
+
+# individual libraries are in the according cell
+
+knitr::opts_chunk$set(
+  # fig.width = 15, fig.height = 9, 
+  warning = FALSE
+)
+
+# plotly: ,width = 900, height = 550
+```
+
+---
+overview
+---
+```{r}
+head(plastic)
+```
+```{r}
+summary(plastic)
+```
+
+---
+correlation 
+---
+most of the columns are highly correlated, that was to be expected, since most variables are depend on each other, e.g., rigid + flexible = total c production, total -> -rank
+rigid overall has a less strong correlation with the other variables, which might hint to there being a a different sub-population based on rigid production, 
+flexible has a stronger correlation with total as rigid and total, since flexible is a far bigger contribution to total
+flexible has a stronger correlation with the overall production, than rigid, this is interesting and also might hint to rigid producers have a different market strategy than flexible producers
+
+%>% select(-rank, -total, -assets) can show a more clear picture by removing dependent variables
+
+```{r}
+name = c('')
+df <- plastic %>% select(-polymer_producer, - total_waste_div_production) %>% mutate(rank = -rank) %>% # change sign of rank to make it increase with the dependent variables
+  rename( assets = no_of_assets, 
+          product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste, 
+          total = total_contribution_to_sup_waste) 
+
+
+library(corrplot) # correlation plots
+# https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+
+cor <- cor(df)
+cor_mtest <- cor.mtest(df, conf.level = 0.99) # combining correlogram with significance test
+corrplot(cor, method = "number", order = 'hclust', addrect = 3, p.mat = cor_mtest$p, insig = "pch") # order = AOE, FPC, hclust + addrect
+
+corrplot(cor, p.mat = cor_mtest$p, low = cor_mtest$lowCI, upp = cor_mtest$uppCI, order = 'hclust', sig.level = 0.01, tl.pos = 'd', addrect = 3, rect.col = 'navy', plotC = 'rect', cl.pos = 'n', insig = "p-value")
+```
+
+---
+Lorenz curve & Gini coefficient
+---
+a Gini coefficient of 0.56 is quite high, which means that only a top few producers are responsible for a large amount of the total SUP waste contribution, in other words 10% are responsible for 44% of the waste
+
+
+```{r}
+name = c('total_contribution_to_sup_waste', 'Producers')
+df <- plastic %>% rename(value = total_contribution_to_sup_waste) %>% select(value) 
+
+library(gglorenz) #transformations for plotting Lorenz curve, https://github.com/jjchern/gglorenz
+
+lorenzcurve <- df %>% 
+  ggplot(aes(value)) +
+    stat_lorenz(desc = FALSE) +
+    coord_fixed() +
+    geom_abline(linetype = 'dashed') +
+    theme_minimal() +
+    hrbrthemes::scale_x_percent() +
+    hrbrthemes::scale_y_percent() +
+    # hrbrthemes::theme_ipsum_rc() +
+    annotate_ineq(df$value) +
+    ggtitle(paste("Lorenz curve for", name[1], sep=" ")) 
+lorenzcurve <- ggplotly(lorenzcurve) %>% layout(yaxis = list(title = paste("cumulative percentage of", name[1], sep=" ")), xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
+
+lorenzcurve
+```
+```{r}
+name = c('flexible_format_contribution_to_sup_waste', 'rigid_format_contribution_to_sup_waste', 'Producers', 'flexible', 'rigid')
+df <- plastic %>% rename(flexible = flexible_format_contribution_to_sup_waste, rigid = rigid_format_contribution_to_sup_waste) %>% select(flexible, rigid) %>% pivot_longer(cols = c(flexible,rigid))
+
+library(gglorenz) #transformations for plotting Lorenz curve, https://github.com/jjchern/gglorenz
+
+# get ggplot standard colors for grouping, which are equally spaced hues around the color wheel, starting from 15
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+lorenzcurve <- df %>% 
+  ggplot(aes(x = value, color = name)) +
+    stat_lorenz(desc = FALSE) +
+    coord_fixed() +
+    geom_abline(linetype = 'dashed') +
+    theme_minimal() +
+    hrbrthemes::scale_x_percent() +
+    hrbrthemes::scale_y_percent() +
+    # hrbrthemes::theme_ipsum_rc() +
+    annotate_ineq(filter(df, name == name[4])$value, y = 0.95, colour = gg_color_hue(2)[1]) +
+    annotate_ineq(filter(df, name == name[5])$value, y = 0.90, colour = gg_color_hue(2)[2]) +
+    ggtitle(paste("compare Lorenz curve of", name[1], "and", name[2], sep=" ")) 
+lorenzcurve <- ggplotly(lorenzcurve) %>% layout(yaxis = list(title = paste("cumulative percentage of<br>", name[1], "<br>", name[2], sep="")), xaxis = list(title = paste("cumulative percentage of", name[2], sep=" "))) 
+
+lorenzcurve
+```
+
+---
+principal component analysis colored by self organizing map cluster
+---
+I need more knowledge how to work with and interpret SOM and PCA, maybe also not enough observations in data set
+https://iamciera.github.io/SOMexample/html/SOM_RNAseq_tutorial_part2a_SOM.html
+
+but the clustering from SOM, when only independent variables are used, actually show the two assumed subpopulations based on rigid vs flexible produciton
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+# We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+head(scale_data)
+
+
+library(kohonen) # functions to train self-organising maps (SOMs)
+
+# principle component analysis
+pca <- prcomp(scale_data, scale=FALSE)
+summary(pca)
+
+# visualize pcs results
+# Contributions of variables to PC1
+fviz_contrib(pca, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+fviz_contrib(pca, choice = "var", axes = 2, top = 10)
+# Control variable colors using their contributions to the principle axis
+fviz_pca_var(pca, col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             ) + theme_minimal() + ggtitle("Variables - PCA")
+
+# add back to original so everything is together
+pca_scores <- data.frame(pca$x)
+data_val <- cbind(df, pca_scores)
+
+pca_plot <- ggplot(data_val, aes(x = PC1, y = PC2)) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal()
+pca_plot <- ggplotly(pca_plot) %>% layout()
+
+pca_plot
+
+# clustering is performed using the som() function on the scaled gene expression values.
+set.seed(3)
+
+# define a grid for the SOM and train
+grid_size <- ncol(scale_data)
+som_grid <- somgrid(xdim = grid_size, ydim = grid_size, topo = 'hexagonal')
+som_model <- som(scale_data, grid = som_grid)
+summary(som_model)
+
+# generate som plots after training
+plot(som_model, type = 'mapping')
+plot(som_model, type = 'codes')
+# plot(som_model, type = 'counts')
+# plot(som_model, type = 'dist.neighbours')
+# plot(som_model, type = 'quality')
+# plot(som_model, type = 'changes')
+
+# further split the clusters into a smaller set of clusters using hierarchical clustering.
+som_cluster <- cutree(hclust(dist(som_model$codes[[1]])), 2) # use hierarchical clustering to cluster the codebook vectors
+
+plot(som_model, type="mapping", bgcol = som_cluster, main = "Clusters")
+add.cluster.boundaries(som_model, som_cluster)
+
+# attach the hierchal cluster to the larger dataset data_val.
+gridSquare <- grid_size * grid_size
+som_clusterKey <- data.frame(som_cluster)
+som_clusterKey$unit_classif <- c(1:gridSquare)
+data_val <- cbind(data_val,som_model$unit.classif,som_model$distances) %>% rename(unit_classif = 'som_model$unit.classif', distances = 'som_model$distances')
+data_val <- merge(data_val, som_clusterKey, by.x = "unit_classif" )
+head(data_val)
+
+# plot pca with colored clusters
+pcasom_plot <- ggplot(data_val, aes(x = PC1, y = PC2, color = factor(som_cluster), text = polymer_producer)) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal()
+pcasom_plot <- ggplotly(pcasom_plot) %>% layout()
+
+pcasom_plot
+```
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
+df <- merge(plastic, data_val, by.x = 'polymer_producer')
+df <- df %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste, cluster = som_cluster, text = polymer_producer) %>% select(x, y, cluster, text) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(aes(text = text), alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+  
+fig
+```
+
+---
+parallel coordinate plot
+---
+parallel coordinate plot is not very insightful, since there is so much data close together, we cannot see any grouping without prior knowledge, only hint is when you zoom in at the bulk of the data in the lower third (y direction), there is a negative correlation
+
+```{r}
+name = c('plastic producers clustered by focus')
+df <- merge(plastic, select(data_val, som_cluster, polymer_producer), by.x = 'polymer_producer') %>%
+  mutate(som_cluster = as.character(som_cluster)) %>%
+  rename(product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste,
+          assets =  no_of_assets,
+          cluster = som_cluster) %>% 
+  select(assets, product, flexible, rigid, cluster) 
+
+library(GGally) # extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data
+
+# https://www.r-graph-gallery.com/parallel-plot-ggally.html#custom
+parcoord_plot <- ggparcoord(df,
+           columns = 1:4, groupColumn = 5,
+           scale='center', # scaling: standardize and center variables
+           showPoints = TRUE,
+           title = name,
+           alphaLines = 0.3) +
+  theme_minimal() 
+parcoord_plot <- ggplotly(parcoord_plot) %>% layout(autosize=T)
+
+parcoord_plot
+```
+
+---
+k-means clustering
+---
+https://statsandr.com/blog/clustering-analysis-k-means-and-hierarchical-clustering-by-hand-and-in-r/#optimal-number-of-clusters
+As a reminder, this method aims at partitioning n observations into k clusters in which each observation belongs to the cluster with the closest average, serving as a prototype of the cluster
+works not quite as well as SOM, but very close, also recommend cluster is three, but closely followed by 2, since 3 does not reveal any significant connection right now, I wonder what that shows
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+library(NbClust) # determining the optimal number of clusters in a data set
+library(cluster) # computes agglomerative hierarchical clustering of the dataset
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+head(scale_data)
+
+kmeans_model <- kmeans(scale_data, centers = 2, nstart = 12) #  k-means clustering is done via the kmeans() function, with the argument centers that corresponds to the number of desired clusters
+df_cluster <- tibble(df, cluster = as.factor(kmeans_model$cluster)) # store cluster in original data set as column
+head(df_cluster)
+
+# check quality of a k-means partition
+quality <- kmeans_model$betweenss / kmeans_model$totss 
+print(paste("quality of kmeans is BSS/TSS: ", format(round(quality,2), nsmall = 2)))
+
+# find optimal number of clusters
+fviz_nbclust(scale_data, kmeans, method = 'wss') + # Elbow method, needs scaled data
+  # geom_vline(xintercept = 2, linetype = 2) + # add line for better visualization
+  labs(subtitle = "Elbow method") # add subtitle
+
+fviz_nbclust(scale_data, kmeans, method = 'silhouette') + # Silhouette method, needs scaled data
+  labs(subtitle = "Silhouette method") # add subtitle
+
+fviz_nbclust(df[, !names(df) %in% name], kmeans, # Gap statistics, needs original data ?
+             nstart = 25,
+             method = 'gap_stat',
+             nboot = 100) + # reduce it for lower computation time, but less precise results
+  labs(subtitle = "Gap statistics method")
+
+nbclust_out <- NbClust(data = df[, !names(df) %in% name], # NbClust needs the original data ?
+                       distance = 'euclidean',
+                       min.nc = 2, # minimum number of clusters
+                       max.nc = 10, # maximum number of cluster
+                       method = 'complete',
+                       index = 'all')
+fviz_nbclust(nbclust_out) + theme_minimal() +
+  labs(subtitle = "NbClust results")
+
+# check quality of clustering
+# if a large majority of the silhouette coefficients are positive, it indicates that the observations are placed in the correct group
+sil <- silhouette(kmeans_model$cluster, dist(scale_data)) 
+fviz_silhouette(sil)
+
+fviz_cluster(kmeans_model, df[, !names(df) %in% name], ellipse.type = 'norm') + theme_minimal()
+fviz_cluster(kmeans_model, df[, !names(df) %in% name]) + theme_minimal()
+```
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+kmean_calc <- function(df, ...){
+  kmeans(df, scaled = ..., nstart = 30)
+}
+
+km2 <- kmean_calc(scale_data, 2)
+km3 <- kmean_calc(scale_data, 3)
+km4 <- kmeans(scale_data, 4)
+km5 <- kmeans(scale_data, 5)
+km6 <- kmeans(scale_data, 6)
+km7 <- kmeans(scale_data, 7)
+
+p1 <- fviz_cluster(km2, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p1 <- ggplotly(p1) %>% layout(annotations = list(text = "k = 2", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p2 <- fviz_cluster(km3, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p2 <- ggplotly(p2) %>% layout(annotations = list(text = "k = 3", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p3 <- fviz_cluster(km4, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p3 <- ggplotly(p3) %>% layout(annotations = list(text = "k = 4", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p4 <- fviz_cluster(km5, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p4 <- ggplotly(p4) %>% layout(annotations = list(text = "k = 5", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p5 <- fviz_cluster(km6, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p5 <- ggplotly(p5) %>% layout(annotations = list(text = "k = 6", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+p6 <- fviz_cluster(km7, data = scale_data, ellipse.type = "convex") + theme_minimal()
+p6 <- ggplotly(p6) %>% layout(annotations = list(text = "k = 7", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() # TOOD: make all plots linked
+fig
+```
+
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('production_of_in_scope_polymers', 'total_contribution_to_sup_waste')
+df <- tibble(plastic, cluster = as.factor(kmeans_model$cluster))
+df <- df %>% rename(x = production_of_in_scope_polymers, y = total_contribution_to_sup_waste, cluster = cluster, text = polymer_producer) %>% select(x, y, cluster, text) 
+
+# https://ggplot2.tidyverse.org/reference/geom_smooth.html
+point_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    # geom_jitter(alpha = 0.5, size = 1) +
+    geom_rug(alpha = 0.5) + # two 1d marginal distributions, display individual cases so are best used with smaller datasets
+    geom_density_2d(alpha = 0.2, bins = 4) +# 2D kernel density estimation using MASS::kde2d() and display the results with contours
+    geom_smooth(fill = "grey90") + # aids the eye in seeing patterns in the presence of overplotting
+    geom_point(aes(text = text), alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" ")) 
+point_plot <- ggplotly(point_plot) %>% layout(xaxis = list(showticklabels = FALSE))
+
+x_density_plot <- df %>%
+  ggplot(aes(x = x, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    theme_minimal() 
+x_density_plot <- ggplotly(x_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+y_density_plot <- df %>%
+  ggplot(aes(x = y, color = factor(cluster))) +
+    stat_density(geom="line") + # draws kernel density estimate, which is a smoothed version of the histogram
+    # geom_histogram(binwidth = 1) +
+    coord_flip() +
+    theme_minimal() 
+y_density_plot <- ggplotly(y_density_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE), xaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://ggplot2.tidyverse.org/reference/geom_quantile.html
+qualtile_plot <- df %>%
+  ggplot(aes(x = x, y = y, color = factor(cluster))) +
+    geom_quantile(alpha = 0.8) + # fits a quantile regression to the data and draws the fitted quantiles with lines
+    theme_minimal() 
+qualtile_plot <- ggplotly(qualtile_plot) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+sub1 <- subplot(x_density_plot, plotly_empty(), point_plot, y_density_plot, nrows = 2, margin = 0, heights = c(0.15, 0.85), widths = c(0.9, 0.1), shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE) %>% layout()
+sub2 <- subplot(qualtile_plot, plotly_empty(), margin = 0, widths = c(0.9, 0.10), titleX = FALSE, titleY = FALSE) %>% layout()
+fig <- subplot(sub1, sub2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+fig
+```
+
+---
+hierarchical clustering
+---
+https://statsandr.com/blog/clustering-analysis-k-means-and-hierarchical-clustering-by-hand-and-in-r/#optimal-number-of-clusters
+remind that the difference with the partition by k-means is that for hierarchical clustering, the number of classes is not specified in advance
+
+it seems that most clusters are confused by some specific values (81, 63, 72, 36?), are they some sort of outlier, or what is special about them?
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+head(scale_data)
+
+no_k = 2;
+
+# Hierarchical clustering: single linkage
+hclust_res <- hclust(dist(scale_data), method = 'single')
+fviz_dend(hclust_res, k = no_k, rect = TRUE)
+
+# Hierarchical clustering: complete linkage
+hclust_res <- hclust(dist(scale_data), method = 'complete')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+
+# Hierarchical clustering: average linkage
+hclust_res <- hclust(dist(scale_data), method = 'average')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+
+# Hierarchical clustering: ward
+hclust_res <- hclust(dist(scale_data), method = 'ward.D2')
+fviz_dend(hclust_res, k = no_k, rect = TRUE)
+
+# Hierarchical clustering: mcquitty
+hclust_res <- hclust(dist(scale_data), method = 'mcquitty')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+
+# Hierarchical clustering: centroid
+hclust_res <- hclust(dist(scale_data), method = 'centroid')
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+```
+
+---
+Clustree
+---
+https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+In this figure the size of each node corresponds to the number of samples in each cluster, and the arrows are coloured according to the number of samples each cluster receives. A separate set of arrows, the transparent ones, called the incoming node proportion, are also coloured and shows how samples from one group end up in another group — an indicator of cluster instability.
+
+```{r, fig.width = 15, fig.height = 9}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+# config
+no_of_cluster = 9
+
+library(clustree) # produce clustering trees, a visualization for interrogating clusterings as resolution increases
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+head(scale_data)
+
+tmp <- NULL
+for (k in 1:no_of_cluster){
+  tmp[k] <- kmeans(scale_data, k, nstart = 30)
+}
+
+tmp_df <- data.frame(tmp)
+colnames(tmp_df) <- seq(1:no_of_cluster) # add prefix to the column names
+colnames(tmp_df) <- paste0("k", colnames(tmp_df)) 
+
+# get individual PCA
+tmp_df.pca <- prcomp(tmp_df, center = TRUE, scale. = FALSE)
+
+ind.coord <- tmp_df.pca$x
+ind.coord <- ind.coord[,1:2]
+
+tmp_df <- bind_cols(as.data.frame(tmp_df), as.data.frame(ind.coord))
+
+clustree(tmp_df, prefix = "k") # produce clustering trees, a visualization for interrogating clustering as resolution increases
+
+overlay_list <- clustree_overlay(tmp_df, prefix = "k", x_value = "PC1", y_value = "PC2", plot_sides = TRUE)
+overlay_list$overlay
+overlay_list$x_side
+overlay_list$y_side
+```
+
+---
+clValid to choose best clustering algo
+---
+https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+The cValid package can be used to simultaneously compare multiple clustering algorithms, to identify the best clustering approach and the optimal number of clusters. We will compare k-means, hierarchical and PAM clustering.
+Connectivity and Silhouette are both measurements of connectedness while the Dunn Index is the ratio of the smallest distance between observations not in the same cluster to the largest intra-cluster distance.
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+library(clValid) # Statistical and biological validation of clustering results. This package implements Dunn Index, Silhouette, Connectivity, Stability, BHI and BSI
+library(mclust) # BIC for parameterized Gaussian mixture models fitted by EM algorithm initialized by model-based hierarchical clustering
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+intern <- clValid(scale_data, nClust = 2:9, 
+                  clMethods = c("hierarchical", "kmeans", "diana", "fanny", "som", "model", "sota", "pam", "clara", "agnes"),
+                  validation = "internal")
+
+summary(intern)
+```
+
+---
+Extracting Features of Clusters
+---
+https://towardsdatascience.com/10-tips-for-choosing-the-optimal-number-of-clusters-277e93d72d92
+Ultimately, we would like to answer questions like “what is it that makes this cluster unique from others?” and “what are the clusters that are similar to one another”. Let’s select four clusters and interrogate the features of these clusters.
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+no_k = 3
+no_var = 3
+
+# scale_data <- as.matrix(t(scale(t(df[, !names(df) %in% name]))))
+# scale_data <- as.matrix(scale(df[, !names(df) %in% name]))
+scale_data <- as.matrix(df[, !names(df) %in% name]) # without scaling since the variables actually are on the same scale
+
+# compute dissimilarity matrix with euclidean distances
+d <- dist(scale_data, method = 'euclidean')
+
+# hierarchical clustering using Ward's method
+res_hc <- hclust(d, method = 'ward.D2')
+
+# cut tree into 3 groups
+grp <- cutree(res_hc, k = no_k)
+
+# visualize
+plot(res_hc, cex = 0.6) # plot tree
+rect.hclust(res_hc, k = no_k, border = 2:5) # add rectangles
+
+# execution of k-means with k = 4
+final <- kmeans(scale_data, no_k, nstart = 30)
+
+fviz_cluster(final, data = scale_data) + theme_minimal() + ggtitle("k = 4")
+```
+```{r}
+as.tibble(scale_data) %>% 
+  mutate(cluster = final$cluster) %>%
+  group_by(cluster) %>%
+  summarise_all('mean')
+
+as.tibble(plastic) %>% 
+  mutate(cluster = final$cluster) %>%
+  group_by(cluster) %>%
+  summarise_all('mean')
+```
+```{r}
+df <- as_tibble(scale_data) %>% rownames_to_column()
+
+cluster_pos <- as_tibble(final$cluster) %>% rownames_to_column()
+colnames(cluster_pos) <- c("rowname", "cluster")
+
+final <- inner_join(cluster_pos, df, by = "rowname")
+
+library(ggiraphExtra) # enhance 'ggplot2' and 'ggiraph', provides functions for exploratory plots, see https://rpubs.com/cardiomoon/231820
+
+radar <- ggRadar(final[-1], aes(group = cluster), rescale = FALSE,
+        legend.position = "none", size = 1, interactive = FALSE, use.label = TRUE) +
+  facet_wrap(~cluster) +
+  scale_y_discrete(breaks = NULL) + # don't show ticks
+  theme_minimal()
+
+radar
+```
+```{r}
+df <- as_tibble(scale_data)
+df$cluster <- as.factor(final$cluster)
+
+library(GGally) # extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data
+
+ggpairs(df, 1:no_var, mapping = ggplot2::aes(color = cluster, alpha = 0.5),
+        diag = list(continuous = wrap("densityDiag")),
+        lower = list(continuous = wrap("points", alpha = 0.9))) +
+  theme_minimal()
+```
+```{r}
+df <- as_tibble(scale_data)
+df$cluster <- as.factor(final$cluster)
+
+box1 <- ggplot(df, aes(x = cluster, y = product, colour = cluster)) + 
+    geom_boxplot() +
+    theme_minimal() + 
+    ggtitle("product")
+box1 <- ggplotly(box1) %>% layout(annotations = list(text = "product", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+box2 <- ggplot(df, aes(x = cluster, y = rigid, colour = cluster)) + 
+    geom_boxplot() +
+    theme_minimal() +
+    ggtitle("rigid")
+box2 <- ggplotly(box2) %>% layout(annotations = list(text = "rigid", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+box3 <- ggplot(df, aes(x = cluster, y = flexible, colour = cluster)) + 
+    geom_boxplot() +
+    theme_minimal() +
+    ggtitle("flexible")
+box3 <- ggplotly(box3) %>% layout(annotations = list(text = "flexible", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+fig <- subplot(box1, box2, box3, margin = 0) %>% layout()
+
+fig
+```
+```{r}
+df <- as_tibble(scale_data)
+df$cluster <- as.factor(final$cluster)
+
+library(GGally) # extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data
+
+# https://www.r-graph-gallery.com/parallel-plot-ggally.html#custom
+parcoord_plot <- ggparcoord(df,
+           columns = 1:no_var, groupColumn = (no_var+1),
+           scale='center', # scaling: standardize and center variables
+           showPoints = TRUE,
+           title = name,
+           alphaLines = 0.3) +
+  theme_minimal() 
+parcoord_plot <- ggplotly(parcoord_plot) %>% layout(autosize=T)
+
+parcoord_plot
+```
+
+---
+compare scale functions
+---
+scale is generic function whose default method centers and/or scales the columns of a numeric matrix
+normally you scale the columns (ie variables) to have all variables on the same scale st an increase in 1 unit has the same meaning across all variables, the shape / distribution will not change, but the axis units (see scatter plots)
+scaling the rows (ie observations) made all observations equal in the sense that the absolute distances were replaced by relative distances across all observations, st now the biggest value in a row was across all rows equally big (see "dataframe" plot),
+in our case that was the production variable, now rigid and flexible were separated if there was more or less of them relative to the total production (biggest value, well actually to the mean not the max, but never mind), this sorted all observations according to be more on the rigid or flexible side,
+and that was excatly what I was looking for (and why I was too happy to see my mistake in the first place)
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+scale_data <- as_tibble(t(scale(t(df[, !names(df) %in% name])))) # We need to normalize the data based on scale function because the variables are different scales; Normalization means subtracting mean from each observation and dividing with standard deviation. Check all the variables mean values are zero now
+
+head(scale_data)
+
+scale_data <- as_tibble(scale(df[, !names(df) %in% name]))
+
+head(scale_data)
+
+head(t(df[, !names(df) %in% name]))
+
+library(caret)
+preObj <- preProcess(df[, !names(df) %in% name], method=c("center", "scale"))
+newData <- predict(preObj, df[, !names(df) %in% name])
+head(newData)
+
+# find more methods here: https://stackoverflow.com/questions/15215457/standardize-data-columns-in-r
+```
+
+```{r}
+name = c('polymer_producer')
+df <- plastic %>% select(- total_waste_div_production, -rank, -no_of_assets, -total_contribution_to_sup_waste) %>% # removed variables which are depended on each other
+  rename( product = production_of_in_scope_polymers, 
+          flexible = flexible_format_contribution_to_sup_waste, 
+          rigid = rigid_format_contribution_to_sup_waste)
+
+scaleRow <- as_tibble(t(scale(t(df[, !names(df) %in% name]))))
+head(scaleRow)
+scaleCol <- as_tibble(scale(df[, !names(df) %in% name]))
+head(scaleCol)
+df <- df %>% select(-polymer_producer)
+head(df)
+
+scatterRow <- ggplot(scaleRow, aes(x = flexible, y = rigid)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterRow <- ggplotly(scatterRow) %>% layout(annotations = list(text = "scaleRow", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scatterCol <- ggplot(scaleCol, aes(x = flexible, y = rigid)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterCol <- ggplotly(scatterCol) %>% layout(annotations = list(text = "scaleCol", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scatterDf <- ggplot(df, aes(x = flexible, y = rigid)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterDf <- ggplotly(scatterDf) %>% layout(annotations = list(text = "normal", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+subplot(scatterRow, scatterCol, scatterDf) %>% layout()
+
+
+scaleRow2 <- scaleRow %>% pivot_longer(cols = c(flexible,rigid,product))
+boxRow <- ggplot(scaleRow2, aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() 
+boxRow <- ggplotly(boxRow) %>% layout(annotations = list(text = "scaleRow", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scaleCol2 <- scaleCol %>% pivot_longer(cols = c(flexible,rigid,product))
+boxCol <- ggplot(scaleCol2, aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() 
+boxCol <- ggplotly(boxCol) %>% layout(annotations = list(text = "scaleCol", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+df_long <- df %>% pivot_longer(cols = c(flexible,rigid,product))
+boxDf <- ggplot(df_long, aes(x = name, y = value, colour = name)) +
+    geom_boxplot() +
+    theme_minimal() 
+boxDf <- ggplotly(boxDf) %>% layout(annotations = list(text = "normal", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+subplot(boxRow, boxCol, boxDf) %>% layout()
+
+
+scaleRow <- scaleRow %>% rowid_to_column() %>% pivot_longer(cols = c(flexible,rigid,product))
+scatterRow <- ggplot(scaleRow, aes(x = value, y = rowid, colour = name)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterRow <- ggplotly(scatterRow) %>% layout(annotations = list(text = "scaleRow", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+scaleCol <- scaleCol %>% rowid_to_column() %>% pivot_longer(cols = c(flexible,rigid,product))
+scatterCol <- ggplot(scaleCol, aes(x = value, y = rowid, colour = name)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterCol <- ggplotly(scatterCol) %>% layout(annotations = list(text = "scaleCol", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+df_id <- df %>% rowid_to_column() %>% pivot_longer(cols = c(flexible,rigid,product))
+scatterDf <- ggplot(df_id, aes(x = value, y = rowid, colour = name)) +
+    geom_point(alpha = 0.75) + # point geom is used to create scatterplots
+    theme_minimal() 
+scatterDf <- ggplotly(scatterDf) %>% layout(annotations = list(text = "normal", font = f, xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center", align = "center", x = 0.5, y = 1, showarrow = FALSE))
+
+subplot(scatterRow, scatterCol, scatterDf) %>% layout()
+```
+

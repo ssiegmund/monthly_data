@@ -1,5 +1,5 @@
 ---
-title: "describe univariate for camera data set"
+title: "describe bivariate for camera data set"
 author: "Sascha Siegmund"
 date: "`r Sys.Date()`"
 output: 

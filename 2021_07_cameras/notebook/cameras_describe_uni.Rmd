@@ -837,7 +837,7 @@ fig
 # dat <- c(rnorm(100), rnorm(100,5))
 # dat <- c(rbinom(500, 100, 0.4), rpois(500, 25))
 # dat <- c(rbinom(500, 100, 0.4), rnorm(1000,5))
-dat <- c(rbinom(100, 10, 0.3), rnorm(100,4), rep(25, 5), rep(10, 5))
+dat <- c(rbinom(100, 10, 0.3), rnorm(100,5), rep(10, 16))
 
 
 name = 'weight_inc_batteries'
