@@ -117,7 +117,7 @@ In this figure the size of each node corresponds to the number of samples in eac
 ```{r, fig.width = 15, fig.height = 9}
 tmp_df <- scale_df
 
-library(clustree) # produce clustering trees, a visualization for interrogating clusterings as resolution increases
+library(clustree) # produce clustering trees, a visualization to interrogate clusterings as resolution increase
 
 tmp <- NULL
 for (k in 1:max_k){
@@ -155,9 +155,9 @@ tmp_df <- scale_df
 
 # Hierarchical clustering: single linkage
 hclust_res <- hclust(dist(tmp_df), method = 'single')
-# plot(hclust_res)
-# rect.hclust(hclust_res, k = no_k, border = 'blue')
-fviz_dend(hclust_res, k = no_k, rect = TRUE) # can take some time for big data sets
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
+# fviz_dend(hclust_res, k = no_k, rect = TRUE) # can take some time for big data sets
  
 # Hierarchical clustering: complete linkage
 hclust_res <- hclust(dist(tmp_df), method = 'complete')
@@ -283,8 +283,8 @@ p6 <- fviz_cluster(km7, data = tmp_df, ellipse.type = "convex") + theme_minimal(
 p6 <- ggplotly(p6) %>% layout(annotations = list(text = "k = 7", xref = "paper", yref = "paper", 
                                                  yanchor = "bottom", xanchor = "center", 
                                                  align = "center", x = 0.5, y = 1, showarrow = FALSE))
-
-fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() # TOOD: make all plots linked
+# TOOD: make all plots linked
+fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() 
 fig
 ```
 
@@ -442,7 +442,7 @@ library(GGally) # extends ggplot2 by adding several functions to reduce the comp
 parcoord_plot <- ggparcoord(tmp_df,
            columns = 1:ncol(scale_df), groupColumn = ncol(tmp_df),
            scale='center', # scaling: standardize and center variables
-           showPoints = TRUE,
+           showPoints = FALSE,
            alphaLines = 0.3) +
   theme_minimal() 
 parcoord_plot <- ggplotly(parcoord_plot) %>% layout(autosize=T)
@@ -464,7 +464,7 @@ tmp_df <- value_df %>% rename(x = max_resolution) %>%
 p1 <- tmp_df %>%
   ggplot(aes(x = x, fill = cluster, color = cluster)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", x, "\ncount: ", n)),
-               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     # stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -503,7 +503,7 @@ p1 <- tmp_df %>%
     geom_boxplot(fill=NA, lwd = 0.25) +
     geom_spoke(aes(x = as.numeric(cluster) + n/max(tmp_df$n)/2, 
                    radius = n/max(tmp_df$n), angle = pi, color = cluster),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = I(0.5), stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     coord_flip() +
     theme_minimal() +
     ggtitle(paste("compare ", name[1], "over clusters", sep=" ")) 
@@ -589,7 +589,7 @@ p1 <- tmp_df %>%
     # stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     stat_summary(aes(color = cluster), fun.y = 'median', geom = 'line', size = 0.4) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = cluster),
-               alpha = I(0.4), lwd = 1, stat = 'unique') + 
+               alpha = I(0.5), stat = 'unique') + 
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))

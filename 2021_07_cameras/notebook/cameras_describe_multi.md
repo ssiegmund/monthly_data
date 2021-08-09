@@ -1,7 +1,7 @@
-describe univariate for camera data set
+describe bivariate for camera data set
 ================
 Sascha Siegmund
-2021-08-01
+2021-08-09
 
 ## purpose of notebook
 
@@ -134,7 +134,7 @@ p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
     geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = I(0.5), stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     coord_flip() +
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
@@ -179,7 +179,7 @@ p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
     geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = I(0.5), stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     coord_flip() +
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
@@ -224,7 +224,7 @@ p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
     geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = I(0.5), stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     coord_flip() +
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 
@@ -269,7 +269,7 @@ p1 <- tmp_df %>%
   ggplot(aes(x = x, y = y)) +
     geom_boxplot(fill=NA, lwd = 0.25) +
     geom_spoke(aes(x = as.numeric(x) + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = x),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = I(0.5), stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     coord_flip() +
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "grouped by", name[2], sep=" ")) 

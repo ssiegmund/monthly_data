@@ -1,7 +1,7 @@
 discover cluster with time for camera data set
 ================
 Sascha Siegmund
-2021-08-07
+2021-08-09
 
 ## purpose of notebook
 
@@ -184,9 +184,9 @@ summary(intern)
     ## fanny        Connectivity  199.6746       NA       NA       NA       NA       NA
     ##              Dunn            0.0173       NA       NA       NA       NA       NA
     ##              Silhouette      0.2335       NA       NA       NA       NA       NA
-    ## som          Connectivity  150.2702 164.2952 176.9171 240.7893 236.9063 314.0671
-    ##              Dunn            0.0287   0.0176   0.0231   0.0147   0.0251   0.0268
-    ##              Silhouette      0.2774   0.2895   0.2876   0.2768   0.2688   0.2350
+    ## som          Connectivity  156.6861 161.7119 167.6786 236.4806 255.7500 272.5476
+    ##              Dunn            0.0339   0.0212   0.0231   0.0362   0.0329   0.0028
+    ##              Silhouette      0.2733   0.2911   0.2923   0.2533   0.2174   0.2201
     ## model        Connectivity  163.6623 211.3817 282.9437 268.1286 459.1813 472.8175
     ##              Dunn            0.0261   0.0272   0.0154   0.0162   0.0140   0.0235
     ##              Silhouette      0.2530   0.1842   0.1147   0.1752   0.0648   0.1132
@@ -223,7 +223,7 @@ indicator of cluster instability.
 ``` r
 tmp_df <- scale_df
 
-library(clustree) # produce clustering trees, a visualization for interrogating clusterings as resolution increases
+library(clustree) # produce clustering trees, a visualization to interrogate clusterings as resolution increase
 
 tmp <- NULL
 for (k in 1:max_k){
@@ -278,14 +278,15 @@ tmp_df <- scale_df
 
 # Hierarchical clustering: single linkage
 hclust_res <- hclust(dist(tmp_df), method = 'single')
-# plot(hclust_res)
-# rect.hclust(hclust_res, k = no_k, border = 'blue')
-fviz_dend(hclust_res, k = no_k, rect = TRUE) # can take some time for big data sets
+plot(hclust_res)
+rect.hclust(hclust_res, k = no_k, border = 'blue')
 ```
 
 ![](nb_figs/clus_unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
+# fviz_dend(hclust_res, k = no_k, rect = TRUE) # can take some time for big data sets
+ 
 # Hierarchical clustering: complete linkage
 hclust_res <- hclust(dist(tmp_df), method = 'complete')
 plot(hclust_res)
@@ -479,9 +480,9 @@ fviz_silhouette(sil)
 ```
 
     ##   cluster size ave.sil.width
-    ## 1       1  521          0.38
-    ## 2       2   96          0.15
-    ## 3       3  263          0.15
+    ## 1       1   96          0.15
+    ## 2       2  263          0.15
+    ## 3       3  521          0.38
 
 ![](nb_figs/clus_unnamed-chunk-10-7.png)<!-- -->
 
@@ -535,8 +536,8 @@ p6 <- fviz_cluster(km7, data = tmp_df, ellipse.type = "convex") + theme_minimal(
 p6 <- ggplotly(p6) %>% layout(annotations = list(text = "k = 7", xref = "paper", yref = "paper", 
                                                  yanchor = "bottom", xanchor = "center", 
                                                  align = "center", x = 0.5, y = 1, showarrow = FALSE))
-
-fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() # TOOD: make all plots linked
+# TOOD: make all plots linked
+fig <- subplot(p1, p2, p3 , p4, p5, p6, nrows = 2, shareX = TRUE, shareY = TRUE) %>% layout() 
 fig
 ```
 
@@ -810,7 +811,7 @@ library(GGally) # extends ggplot2 by adding several functions to reduce the comp
 parcoord_plot <- ggparcoord(tmp_df,
            columns = 1:ncol(scale_df), groupColumn = ncol(tmp_df),
            scale='center', # scaling: standardize and center variables
-           showPoints = TRUE,
+           showPoints = FALSE,
            alphaLines = 0.3) +
   theme_minimal() 
 parcoord_plot <- ggplotly(parcoord_plot) %>% layout(autosize=T)
@@ -833,7 +834,7 @@ tmp_df <- value_df %>% rename(x = max_resolution) %>%
 p1 <- tmp_df %>%
   ggplot(aes(x = x, fill = cluster, color = cluster)) +
     geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", x, "\ncount: ", n)),
-               alpha = 0.3, lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     # stat_density(aes(y = ..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity', trim = TRUE) +
     theme_minimal()  
 p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
@@ -874,7 +875,7 @@ p1 <- tmp_df %>%
     geom_boxplot(fill=NA, lwd = 0.25) +
     geom_spoke(aes(x = as.numeric(cluster) + n/max(tmp_df$n)/2, 
                    radius = n/max(tmp_df$n), angle = pi, color = cluster),
-               alpha = I(0.5), lwd = 1, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+               alpha = I(0.5), stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
     coord_flip() +
     theme_minimal() +
     ggtitle(paste("compare ", name[1], "over clusters", sep=" ")) 
@@ -964,7 +965,7 @@ p1 <- tmp_df %>%
     # stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
     stat_summary(aes(color = cluster), fun.y = 'median', geom = 'line', size = 0.4) + 
     geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi, color = cluster),
-               alpha = I(0.4), lwd = 1, stat = 'unique') + 
+               alpha = I(0.5), stat = 'unique') + 
     theme_minimal() +
     ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
 fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
