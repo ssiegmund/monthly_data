@@ -412,7 +412,7 @@ library(ggiraphExtra) # for exploratory plots, see https://rpubs.com/cardiomoon/
 
 radar <- ggRadar(final[-1], aes(group = cluster), rescale = FALSE,
         legend.position = "none", size = 1, interactive = FALSE, use.label = TRUE) +
-  facet_wrap(~cluster) +
+  # facet_wrap(~cluster) +
   scale_y_discrete(breaks = NULL) + # don't show ticks
   theme_minimal()
 

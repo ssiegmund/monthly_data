@@ -1,0 +1,182 @@
+---
+title: "cleaning for New York City Restaurant Inspection Results"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/clean_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [X] initial look at data to get a basic understanding and gather todos -> df_raw
+  - [X] tidy up and cleaning of data set -> df
+  - [X] all processing of the data set happens here and is saved to pre-/processed csv-> df
+ 
+
+## observations
+
+  - a lot of missing values in grade and grade date but often with reason, there is a pattern that latitude, longitude and nta are missing together so also not MAR, 
+    furthermore some rows miss most column values since they are not initially inspected (inspection_date == 01/01/1900) 
+  - some duplicated rows, which need to be removed; also note, that visualization is note working appropriately for big data sets and a fair amount of duplicates
+  - cleaning: 
+    + clean names
+    + removed columns with no valuable information (-building, -zipcode, -phone, -record_date, -community_board, -council_district, -census_tract, -bin, -bbl)
+    + date to correct format. removed duplicated rows 
+    + categorical variables as factors (even though it can't be saved in csv)
+    + shorten often repeated long description of factor levels
+  - added variables: non yet
+               
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(lubridate) # functions to work with date-times and time-spans
+library(scrubr) # like dplyr but specifically for occurrence data
+library(janitor) # expedite the initial data exploration and cleaning that comes with any new data set
+library(plotly)
+```
+
+
+## import data
+
+```{r}
+df_raw <- read_csv(file = '../data/DOHMH_New_York_City_Restaurant_Inspection_Results.csv') 
+df <- df_raw
+```
+
+
+## first look at data
+
+```{r}
+head(df_raw, 25)
+```
+```{r}
+tail(df_raw)
+```
+```{r}
+summary(df_raw)
+```
+
+
+## missing values
+
+- a lot of missing values in grade and grade date but often with reason, there is a pattern that latitude, longitude and nta are missing together so also not MAR, furthermore some rows miss most column values since they are not initially inspected (inspection_date == 01/01/1900) 
+
+```{r fig.height=20, fig.width=10}
+#create data frame with information on whether the value in each cell is zero
+tmp_df <- df_raw == 0
+missing_by_column <- tmp_df %>%
+  as_tibble %>% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = "",
+                  labels = c("present", "is zero", "is NA")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10)) +
+  labs(x = "vairables in dataset",
+       y = "rows / observations")
+```
+
+
+## duplicated rows
+
+- some duplicated rows, which need to be removed; also note, that visualization is note working appropriately for big data sets and a fair amount of duplicates
+
+```{r}
+# get row number of duplicated rows
+duplicated_rows <- tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
+  filter(duplicated == T)
+
+# plot duplicated rows as black lines
+ggplot(duplicated_rows, aes(xintercept = row)) +
+  geom_vline(aes(xintercept = row)) + # plot a black line for each duplicated row
+  ggtitle("indexes of duplicated rows") + # add title
+  coord_flip() + # flip x and y axis
+  scale_x_reverse() # reverse x axis
+```
+
+
+## cleaning
+
+- clean names, removed columns with no valuable information (-building, -zipcode, -phone, -record_date, -community_board, -council_district, -census_tract, -bin, -bbl), date to correct format. removed duplicated rows, categorical variables as factors (even though it can't be saved in csv), shorten often repeated long description of factor levels
+
+```{r}
+df <- df %>%
+  clean_names() %>% # get clean column names with janitor package
+  select(-building, -zipcode, -phone, -record_date, -community_board, -council_district, -census_tract, -bin, -bbl) %>% # remove columns with no valuable information
+  mutate(inspection_date = mdy(inspection_date)) %>% # date to correct format
+  mutate(grade_date = mdy(grade_date)) %>% # date to correct format
+  distinct() # remove duplicated rows
+
+# categorical col as factor 
+df <- df %>%
+  mutate(boro = factor(boro)) %>%
+  mutate(cuisine_description = factor(cuisine_description)) %>%
+  mutate(violation_code = factor(violation_code)) %>%
+  mutate(critical_flag = factor(critical_flag)) %>%
+  mutate(grade = factor(grade)) %>%
+  mutate(nta = factor(nta)) %>%
+  mutate(inspection_type = factor(inspection_type)) %>%
+  mutate(action = factor(action)) 
+
+# shorten often repeated long description
+df <- df %>%
+  mutate(action = recode_factor(action, `Violations were cited in the following area(s).` = "violations")) %>%
+  mutate(action = recode_factor(action, `Establishment Closed by DOHMH. Violations were cited in the following area(s) and those requiring immediate action were addressed.` = "closed")) %>%
+  mutate(action = recode_factor(action, `No violations were recorded at the time of this inspection.` = "no_violations")) %>%
+  mutate(action = recode_factor(action, `Establishment re-closed by DOHMH.` = "re_closed")) %>%
+  mutate(action = recode_factor(action, `Establishment re-opened by DOHMH.` = "re_opened"))
+
+df <- df %>%
+  mutate(cuisine_description = recode_factor(cuisine_description, `Not Listed/Not Applicable` = 'Other'))  %>%
+  mutate(cuisine_description = recode_factor(cuisine_description, `Sandwiches/Salads/Mixed Buffet` = 'Mixed Buffet')) %>%
+  mutate(cuisine_description = recode_factor(cuisine_description, `Juice, Smoothies, Fruit Salads` = 'Smoothies/Fruit Salads'))
+  
+df <- df %>%
+  mutate(critical_flag = recode_factor(critical_flag, `Not Applicable` = NA_character_)) %>%
+  mutate(critical_flag = recode_factor(critical_flag, `Critical` = '1')) %>%
+  mutate(critical_flag = recode_factor(critical_flag, `Not Critical` = '0'))
+```
+
+
+## additional variables
+
+- non yet
+
+```{r}
+
+```
+
+
+```{r}
+# check results from cleaning and added variables
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## save processed data
+
+```{r}
+df %>% write_csv(file = '../data/restaurants_data_processed.csv')
+```
+

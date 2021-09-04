@@ -1,0 +1,98 @@
+---
+title: "summary for New York City Restaurant Inspection Results"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/summary_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [ ] summarize all insights and ideas from the other notebooks, as well as good exploratory plots
+   
+   
+## information
+
+ - found on: https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j
+   
+    
+## domain information 
+
+- Context: DOHMH New York City Restaurant Inspection Results
+    
+The dataset contains every sustained or not yet adjudicated violation citation from every full or special program inspection conducted up to three years prior to the most recent inspection for restaurants and college cafeterias in an active status on the RECORD DATE (date of the data pull). When an inspection results in more than one violation, values for associated fields are repeated for each additional violation record. Establishments are uniquely identified by their CAMIS (record ID) number. Keep in mind that thousands of restaurants start business and go out of business every year; only restaurants in an active status are included in the dataset.
+Records are also included for each restaurant that has applied for a permit but has not yet been inspected and for inspections resulting in no violations. Establishments with inspection date of 1/1/1900 are new establishments that have not yet received an inspection. Restaurants that received no violations are represented by a single row and coded as having no violations using the ACTION field.
+Because this dataset is compiled from several large administrative data systems, it contains some illogical values that could be a result of data entry or transfer errors. Data may also be missing.
+This dataset and the information on the Health Department’s Restaurant Grading website come from the same data source. The Health Department’s Restaurant Grading website is here:
+http://www1.nyc.gov/site/doh/services/restaurant-grades.page
+See the data dictionary file in the Attachments section of the OpenData website for a summary of data fields and allowable values.
+
+  
+## summary highlights
+  
+  - column information:  
+  
+  |  # | attribute | description & properties | data type | density | missing values | dependent? | remove? |
+  |:--:|:---------:|:-----------------------------------------------------------:|:---:|:---:|:---:|
+  | 1 | CAMIS | Unique identifier for the establishment (restaurant) | nominal, dbl | dense | non | no | no |
+  | 2 | DBA | Establishment (restaurant) name, DBA = 'doing business as' | nominal, chr  | dense | almost non | same as CAMIS | no |
+  | 3 | BORO | Borough of establishment (restaurant) location | nominal, chr | sparse, 6 categories | non | no | no |
+  | 4 | BUILDING | Building number for establishment (restaurant) location | nominal, dbl | dense | almost non | no |
+
+
+## stories
+
+
+ 
+ 
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(plotly) # make ggplots interactive
+```
+
+
+## import data
+
+```{r}
+df <- read_csv(file = '../data/restaurants_data_processed.csv')
+```
+
+## overview
+
+```{r}
+head(df)
+```
+
+```{r}
+summary(df)
+```
+
+
+## observations from clean nb
+
+
+
+
+## insights from describe uni
+
+  
+
+
+## insights from describe multi
+
+
+

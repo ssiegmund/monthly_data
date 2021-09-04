@@ -1,0 +1,404 @@
+---
+title: "describe univariate for New York City Restaurant Inspection Results"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/uni_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [] describe & visualize single variables (univariate)
+  - [] gather interesting observations for further investigation
+  - [] gather possible new features for extraction
+  
+  
+## insights 
+
+  - camis: there are some few numbers starting with 3, which are also very low in count (< 12), and a lot of numbers starting with 4 or 5, which vary in count (40 - 90), for 5 the numbers are very dense or high in count
+  - boro: most restaurants are in Manhattan (40%), equally many in Brooklyn and Queens (23% each), only few in Bronx and Staten Island (both < 14%)
+  - street: top 3 are Broadway, 3 Avenue, 5 Avenue, 2 Avenue; distribution looks exponential
+  - cuisine_description: top 3 are American, Chinese, Pizza; distribution looks exponential
+  - action: almost all observations are violations, but be aware that one inspection might yield multiple violations as observations in the data set, second is closed and third is                no_violations; 
+    + to have a better view, we need to make the inspection date per camis unique to only have one observation per inspection: still violations are almost all observations, but ratio       closed to re_opened is quite equal now, sadly more closed then no_violations 
+  - violation_code: distribution is exponential with some big steps, top is 10F and second 08A by far
+    + 10F = Non-food contact surface improperly constructed. Unacceptable material used. Non-food contact surface or equipment improperly maintained and/or not properly sealed,                   raised, spaced or movable to allow accessibility for cleaning on all sides, above and underneath the unit.
+    + 08A = Facility not vermin proof. Harborage or conditions conducive to attracting vermin to the premises and/or allowing vermin to exist.
+  - critical_flag: 55% are critical and 44% are not critical observations, only very few NAs (not MAR)
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(plotly) # make ggplots interactive
+```
+
+
+## import data
+
+```{r, message=FALSE}
+df <- read_csv(file = '../data/restaurants_data_processed.csv')
+```
+
+
+## overview
+
+```{r}
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## univariate numeric/nominal camis
+
+- camis: there are some few numbers starting with 3, which are also very low in count (< 12), and a lot of numbers starting with 4 or 5, which vary in count (40 - 90), for 5 the numbers are very dense or high in count
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'camis'
+tmp_df <- df %>% rename(value = camis) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical boro
+
+- boro: most restaurants are in Manhattan (40%), equally many in Brooklyn and Queens (23% each), only few in Bronx and Staten Island (both < 14%)
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'boro'
+tmp_df <- df %>% rename(value = boro) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical street
+
+- street: top 3 are Broadway, 3 Avenue, 5 Avenue, 2 Avenue; distribution looks exponential
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'street'
+tmp_df <- df %>% rename(value = street) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+# fig
+```
+
+
+## univariate categorical cuisine_description
+
+- cuisine_description: top 3 are American, Chinese, Pizza; distribution looks exponential
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'cuisine_description'
+tmp_df <- df %>% rename(value = cuisine_description) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric/nominal inspection_date
+
+- inspection_date: there are more inspections with increasing time, but a gap from 2020-03-14 till 2021-07-19 with only a very few observations, mostly due to covid lookdown
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'inspection_date'
+tmp_df <- df %>% rename(value = inspection_date) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical action
+
+- action: almost all observations are violations, but be aware that one inspection might yield multiple violations as obsrevations in the data set, second is closed and third is no_violations; 
+  + to have a better view, we need to make the inspection date per camis unique to only have one observation per inspection: still violations are almost all observations, but ratio closed to re_opened is quite equal now, sadly more closed then no_violations 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'action'
+tmp_df <- df %>% rename(value = action) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+```{r}
+# one variable, categorical x, show distribution
+name = 'action'
+tmp_df <- df %>% distinct(inspection_date, camis, .keep_all = TRUE) %>% rename(value = action) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical violation_code
+
+- violation_code: distribution is exponential with some big steps, top is 10F and second 08A by far
+  + 10F = Non-food contact surface improperly constructed. Unacceptable material used. Non-food contact surface or equipment improperly maintained and/or not properly sealed, raised,           spaced or movable to allow accessibility for cleaning on all sides, above and underneath the unit.
+  + 08A = Facility not vermin proof. Harborage or conditions conducive to attracting vermin to the premises and/or allowing vermin to exist.
+
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'violation_code'
+tmp_df <- df %>% rename(value = violation_code) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical critical_flag
+
+- critical_flag: 55% are critical and 44% are not critical observations, only very few NAs (not MAR)
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'critical_flag'
+tmp_df <- df %>% rename(value = critical_flag) %>% select(value) %>% mutate(value = as.factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical score
+
+- score: 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'score'
+tmp_df <- df %>% rename(value = score) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n)), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
