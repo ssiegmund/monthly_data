@@ -1,0 +1,341 @@
+---
+title: "describe bivariate with time for New York City Restaurant Inspection Results"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/time_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [ ] describe & visualize relationship between variables, one of them time-like
+  - [ ] gather interesting observations for further investigation
+  - [ ] gather possible new features for extraction
+  
+  
+## insights 
+
+  - 
+
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame and so much more
+library(plotly) # make ggplots interactive
+library(lubridate) # functions to work with date-times and time-spans
+```
+
+
+## import data
+
+```{r, message=FALSE}
+df <- read_csv(file = '../data/restaurants_data_processed.csv')
+```
+
+
+## overview
+
+```{r}
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## univariate time inspection_date over categorical boro
+
+- 
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+# Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+name = c('boro', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = boro) %>% select(t, y) %>% 
+  filter(t != '1900-01-01')
+
+fig <- tmp_df %>%
+  ggplot(aes(x = t, col = y)) +
+    geom_freqpoly(bins = 30) + # binwidth = 86400 seconds = 1 day, 600 s = 10 minutes
+    theme_minimal() +
+    ggtitle("frequency plot for StartTime") +
+    facet_grid(rows = vars(y))
+
+ggplotly(fig)
+```
+
+
+## univariate time inspection_date over categorical boro - wday
+
+- 
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+# Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+name = c('boro', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = boro) %>% select(t, y) %>% filter(t != '1900-01-01') %>%
+  mutate(t = wday(t, label = TRUE))
+
+fig <- tmp_df %>%
+  ggplot(aes(x = t, fill = y)) +
+    geom_bar() +
+    facet_grid(rows = vars(y)) +
+    theme_minimal() +
+    ggtitle("distribution over week days")
+
+ggplotly(fig)
+```
+
+
+## univariate time inspection_date over categorical boro - year
+
+- 
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+# Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+name = c('boro', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = boro) %>% select(t, y) %>% filter(t != '1900-01-01') %>%
+  mutate(t = year(t))
+
+fig <- tmp_df %>%
+  ggplot(aes(x = t, fill = y)) +
+    geom_bar() +
+    facet_grid(rows = vars(y)) +
+    theme_minimal() +
+    ggtitle("distribution over years")
+
+ggplotly(fig)
+```
+
+
+## univariate time inspection_date over categorical boro - month
+
+- 
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+# Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+name = c('boro', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = boro) %>% select(t, y) %>% filter(t != '1900-01-01') %>%
+  mutate(t = month(t, label = TRUE))
+
+fig <- tmp_df %>%
+  ggplot(aes(x = t, fill = y)) +
+    geom_bar() +
+    facet_grid(rows = vars(y)) +
+    theme_minimal() +
+    ggtitle("distribution over months")
+
+ggplotly(fig)
+```
+
+
+## univariate time inspection_date over categorical boro - mday
+
+- 
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+# Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+name = c('boro', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = boro) %>% select(t, y) %>% filter(t != '1900-01-01') %>%
+  mutate(t = mday(t))
+
+fig <- tmp_df %>%
+  ggplot(aes(x = t, fill = y)) +
+    geom_bar() +
+    facet_grid(rows = vars(y)) +
+    theme_minimal() +
+    ggtitle("distribution over month days")
+
+ggplotly(fig)
+```
+
+
+## univariate time inspection_date over categorical boro - yday
+
+- 
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+# Note that when you use date-times in a numeric context (like in a histogram), 1 means 1 second, so a binwidth of 86400 means one day. For dates, 1 means 1 day.
+name = c('boro', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = boro) %>% select(t, y) %>% filter(t != '1900-01-01') %>%
+  mutate(t = yday(t))
+
+fig <- tmp_df %>%
+  ggplot(aes(x = t, fill = y)) +
+    geom_bar() +
+    facet_grid(rows = vars(y)) +
+    theme_minimal() +
+    ggtitle("distribution over year days")
+
+ggplotly(fig)
+```
+
+
+## univariate numeric score over time inspection_date
+
+- 
+
+```{r}
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('score', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = score) %>% select(t, y) %>% 
+  add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = t, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    # geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+               # alpha = I(0.5), stat = 'unique', color = 'darkgreen') + 
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
+
+fig
+```
+
+
+## univariate numeric score over time inspection_date -  month
+
+- 
+
+```{r}
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('score', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = score) %>% select(t, y) %>% 
+  mutate(t = month(t)) %>% add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = t, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+    alpha = I(0.5), stat = 'unique', color = 'darkgreen') +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
+
+fig
+```
+
+
+## univariate numeric score over time inspection_date -  wday
+
+- 
+
+```{r}
+# two variables, continuous/discrete x, time t, show trend and distribution
+name = c('score', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, y = score) %>% select(t, y) %>% 
+  mutate(t = wday(t)) %>% add_count(t, y)
+
+
+so.q2 <- function(y){ quantile(y, na.rm = TRUE)[2] }
+so.q4 <- function(y){ quantile(y, na.rm = TRUE)[4] }
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = t, y = y)) +
+    geom_boxplot(fill=NA, lwd = 0.25) +
+    stat_summary(fun.y = so.q2, geom = 'line', size = 0.25) + 
+    stat_summary(fun.y = so.q4, geom = 'line', size = 0.25) + 
+    # stat_summary(fun.y = 'median', geom = 'line', size = 0.25) + 
+    geom_spoke(aes(x = t + n/max(tmp_df$n)/2, radius = n/max(tmp_df$n), angle = pi),
+    alpha = I(0.5), stat = 'unique', color = 'darkgreen') +
+    theme_minimal() +
+    ggtitle(paste("distribution of", name[1], "over time", name[2], sep=" ")) 
+fig <- ggplotly(p1) %>% layout(xaxis = list(title = name[2]), yaxis = list(title = name[1]))
+
+fig
+```
+
+
+## bivariate numeric score over numeric camis over time result
+
+- nothing to see here. move along
+
+```{r}
+# two variables, continuous x, continuous y, show trend and distribution
+name = c('score', 'camis', 'inspection_date')
+tmp_df <- df %>% rename(t = inspection_date, x = score, y = camis) %>% select(t, x, y) %>%  
+  add_count(x, y) %>% arrange(t)
+
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = x, y = y)) +
+    geom_segment(aes(xend = c(tail(x, n=-1), NA), yend = c(tail(y, n=-1), NA), color = t), lwd=0.4, alpha=0.7) +
+    viridis::scale_color_viridis(name = name[3], option = 'H') +
+    geom_point(aes(size = n), alpha = 0.3, stat = "unique") + 
+    theme_minimal() +
+    ggtitle(paste("trend of", name[2], "over", name[1], sep=" "))
+p1 <- ggplotly(p1) %>% layout(xaxis = list(title = name[1]), yaxis = list(title = name[2]))
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = x)) +
+    stat_density(geom="line") + 
+    theme_minimal()
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p3 <- tmp_df %>%
+  ggplot(aes(x = 1, y = x)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() 
+p3 <- ggplotly(p3) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p4 <- tmp_df %>%
+  ggplot(aes(x = y)) +
+    stat_density(geom="line") + 
+    coord_flip() +
+    theme_minimal()
+p4 <- ggplotly(p4) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+p5 <- tmp_df %>%
+  ggplot(aes(x = 1, y = y)) +
+    geom_boxplot() +
+    theme_minimal() 
+p5 <- ggplotly(p5) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''), 
+                              xaxis = list(showticklabels = FALSE, showgrid = FALSE, title = ''))
+
+# merge figures into one plot, via subplots, https://plotly-r.com/arranging-views.html
+fig <- subplot(p2, plotly_empty(), plotly_empty(),
+               p3, plotly_empty(), plotly_empty(),
+               p1, p5, p4, 
+               nrows = 3, margin = 0, heights = c(0.1, 0.035, 0.865), widths = c(0.92, 0.02, 0.06), 
+               shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE) %>% layout()
+
+fig
+```
+
+

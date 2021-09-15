@@ -124,7 +124,9 @@ df <- df %>%
   mutate(inspection_date = mdy(inspection_date)) %>% # date to correct format
   mutate(grade_date = mdy(grade_date)) %>% # date to correct format
   distinct() # remove duplicated rows
+```
 
+```{r}
 # categorical col as factor 
 df <- df %>%
   mutate(boro = factor(boro)) %>%
@@ -135,7 +137,9 @@ df <- df %>%
   mutate(nta = factor(nta)) %>%
   mutate(inspection_type = factor(inspection_type)) %>%
   mutate(action = factor(action)) 
+```
 
+```{r}
 # shorten often repeated long description
 df <- df %>%
   mutate(action = recode_factor(action, `Violations were cited in the following area(s).` = "violations")) %>%
@@ -154,6 +158,7 @@ df <- df %>%
   mutate(critical_flag = recode_factor(critical_flag, `Critical` = '1')) %>%
   mutate(critical_flag = recode_factor(critical_flag, `Not Critical` = '0'))
 ```
+
 
 
 ## additional variables
