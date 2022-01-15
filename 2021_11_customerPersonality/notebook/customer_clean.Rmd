@@ -1,0 +1,181 @@
+---
+title: "cleaning for customer personality analysis data"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/clean_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [ ] initial look at data to get a basic understanding and gather todos -> df_raw
+  - [ ] tidy up and cleaning of data set -> df
+  - [ ] all processing of the data set happens here and is saved to pre-/processed csv-> df
+ 
+
+## observations
+
+  - no MAR
+  - no duplicates
+  - cleaning: 
+    + categorical variables as factors (even though it can't be saved in csv)
+    + correct a typo in basis factor
+  - added variables: non yet
+               
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(lubridate) # functions to work with date-times and time-spans
+library(janitor) # expedite the initial data exploration and cleaning that comes with any new data set
+library(plotly)
+
+library(readxl) # read_excel to read xslx dataset
+```
+
+
+## import data
+
+```{r}
+df_raw <- read_tsv('../data/marketing_campaign.csv') 
+df <- df_raw
+```
+
+
+## first look at data
+
+```{r}
+head(df_raw, 25)
+```
+```{r}
+tail(df_raw)
+```
+```{r}
+summary(df_raw)
+```
+
+
+## missing values
+
+- only some NAs in column income, might be intentional 
+
+```{r fig.height=20, fig.width=10}
+#create data frame with information on whether the value in each cell is zero
+tmp_df <- df_raw == 0
+missing_by_column <- tmp_df %>%
+  as_tibble %>% # convert to data frame
+  mutate(row_number = 1:nrow(.)) %>% # add a column with the row number
+  gather(variable, is_missing, -row_number) # turn wide data into narrow data
+
+# plot the missing values in our data frame
+ggplot(missing_by_column, aes(x = variable, y = row_number, fill =  is_missing)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_grey(name = "",
+                  labels = c("present", "is zero", "is NA")) +
+  theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10)) +
+  labs(x = "vairables in dataset",
+       y = "rows / observations")
+```
+
+
+## duplicated rows
+
+- no duplicates
+
+```{r}
+# get row number of duplicated rows
+duplicated_rows <- tibble(duplicated = duplicated(df_raw), row = 1:nrow(df_raw)) %>%
+  filter(duplicated == T)
+
+# plot duplicated rows as black lines
+ggplot(duplicated_rows, aes(xintercept = row)) +
+  geom_vline(aes(xintercept = row)) + # plot a black line for each duplicated row
+  ggtitle("indexes of duplicated rows") + # add title
+  coord_flip() + # flip x and y axis
+  scale_x_reverse() # reverse x axis
+```
+
+
+## cleaning
+
+- 
+
+```{r}
+df <- df %>%
+  mutate(Education = factor(Education)) %>% # categorical col as factor
+  mutate(Marital_Status = factor(Marital_Status)) %>% # categorical col as factor
+  mutate(Dt_Customer = as.Date(Dt_Customer, "%d-%m-%Y")) %>%  # convert chr to date 
+  select(-Z_CostContact, -Z_Revenue) # these columns are constant, so we drop them
+```
+
+
+## remove remove anomalies
+
+- 
+
+```{r}
+df <- df %>% 
+  filter(!((Year_Birth == 1893)|
+           (Year_Birth == 1899)|
+           (Year_Birth == 1900))) %>% 
+  filter(!((Marital_Status == 'Alone')|
+           (Marital_Status == 'YOLO')|
+           (Marital_Status == 'Absurd'))) %>% 
+  filter(!(Income > 120000)) %>% 
+  filter(!(MntMeatProducts > 1000)) %>% 
+  filter(!(MntSweetProducts > 200)) %>% 
+  filter(!(MntGoldProds > 250))
+```
+
+
+## additional variables
+
+- non yet
+
+```{r}
+# new variable: sum of all AcceptedCmp*
+df <- df %>% 
+  rowwise %>% 
+  mutate(AcceptedCmpAll = sum(c_across(contains("AcceptedCmp")))) 
+
+# new variable: Mnt*
+df <- df %>% 
+  rowwise %>% 
+  mutate(MntAll = sum(c_across(contains("Mnt")))) 
+
+# new variable: *Purchases
+df <- df %>% 
+  rowwise %>% 
+  mutate(PurchasesAll = sum(c_across(contains("Purchases")))) 
+```
+
+
+```{r}
+# check results from cleaning and added variables
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## save processed data
+
+```{r}
+df %>% write_csv(file = '../data/marketing_campaign_clean.csv')
+```
+

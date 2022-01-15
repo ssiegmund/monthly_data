@@ -1,0 +1,290 @@
+---
+title: "describe univariate for Estimation of global male circumcision"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/uni_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [ ] describe & visualize single variables (univariate)
+  - [ ] gather interesting observations for further investigation
+  - [ ] gather possible new features for extraction
+  
+  
+## insights 
+
+  - male_circumcision_percent: it seems that there are two populations of countries, one of mostly circumized males, the other of mostly not-circumzied males; but also the few countries in the middle around 50% are interesting 
+  
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(plotly) # make ggplots interactive
+```
+
+
+## import data
+
+```{r, message=FALSE}
+df <- read_csv(file = '../data/male_circumcision.csv')
+```
+
+
+## overview
+
+```{r}
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## univariate categorical region
+
+- region: 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'region'
+tmp_df <- df %>% rename(value = region) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical sub_region
+
+- sub_region: 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'sub_region'
+tmp_df <- df %>% rename(value = sub_region) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical intermediate_region
+
+- intermediate_region: 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'intermediate_region'
+tmp_df <- df %>% rename(value = intermediate_region) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric male_circumcision_percent
+
+- male_circumcision_percent: it seems that there are two populations of countries, one of mostly circumized males, the other of mostly not-circumzied males; but also the few countries in the middle around 50% are interesting  
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'male_circumcision_percent'
+tmp_df <- df %>% rename(value = male_circumcision_percent) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric cia_total_males
+
+- cia_total_males:
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'cia_total_males'
+tmp_df <- df %>% rename(value = cia_total_males) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric total_males_circumcized
+
+- total_males_circumcized:
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'total_males_circumcized'
+tmp_df <- df %>% rename(value = total_males_circumcized) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical basis
+
+- basis: 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'basis'
+tmp_df <- df %>% rename(value = basis) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+
+

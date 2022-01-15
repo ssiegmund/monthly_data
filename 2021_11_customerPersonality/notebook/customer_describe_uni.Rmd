@@ -1,0 +1,1084 @@
+---
+title: "describe univariate for customer personality analysis data"
+author: "Sascha Siegmund"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "nb_figs/uni_",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+
+## purpose of notebook
+
+  - [ ] describe & visualize single variables (univariate)
+  - [ ] gather interesting observations for further investigation
+  - [ ] gather possible new features for extraction
+  
+  
+## insights 
+
+  - male_circumcision_percent: it seems that there are two populations of countries, one of mostly circumized males, the other of mostly not-circumzied males; but also the few countries in the middle around 50% are interesting 
+  
+
+## load packages
+
+```{r load packages, setup, message=FALSE}
+library(tidyverse) # tidy data frame
+library(plotly) # make ggplots interactive
+```
+
+
+## import data
+
+```{r, message=FALSE}
+df <- read_csv(file = '../data/marketing_campaign_clean.csv')
+```
+
+
+## overview
+
+```{r}
+head(df)
+```
+```{r}
+summary(df)
+```
+
+
+## univariate numeric ID
+
+- ID: 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'ID'
+tmp_df <- df %>% rename(value = ID) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+
+## univariate numeric Year_Birth
+
+- Year_Birth: bimodal? compare to baseline of overall population? 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'Year_Birth'
+tmp_df <- df %>% rename(value = Year_Birth) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical Education
+
+- Education: 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'Education'
+tmp_df <- df %>% rename(value = name) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical Marital_Status
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'Marital_Status'
+tmp_df <- df %>% rename(value = name) %>% select(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric Income
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'Income'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical Kidhome
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'Kidhome'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'Kidhome'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical Teenhome
+
+-
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'Teenhome'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric Dt_Customer
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'Dt_Customer'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric Recency
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'Recency'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntWines
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntWines'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntFruits
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntFruits'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntMeatProducts
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntMeatProducts'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntFishProducts
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntFishProducts'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntSweetProducts
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntSweetProducts'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntGoldProds
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntGoldProds'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical NumDealsPurchases
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'NumDealsPurchases'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical NumWebPurchases
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'NumWebPurchases'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical NumCatalogPurchases
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'NumCatalogPurchases'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical NumStorePurchases
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'NumStorePurchases'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical NumWebVisitsMonth
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'NumWebVisitsMonth'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical AcceptedCmp3
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'AcceptedCmp3'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical AcceptedCmp4
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'AcceptedCmp4'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical AcceptedCmp5
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'AcceptedCmp5'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical AcceptedCmp1
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'AcceptedCmp1'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical AcceptedCmp2
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'AcceptedCmp2'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical Complain
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'Complain'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate categorical Response
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'Response'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric AcceptedCmpAll
+
+- 
+
+```{r}
+# one variable, categorical x, show distribution
+name = 'AcceptedCmpAll'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% mutate(value = factor(value))
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = fct_infreq(value))) +
+    geom_bar() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p1 <- ggplotly(p1) %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = fct_infreq(value))) +
+    geom_boxplot(fill = 'lightgrey') +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) +
+    theme(axis.text.x = element_text(angle=45, vjust=0.7, size=10))
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.9, 0.1), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric MntAll
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'MntAll'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+## univariate numeric PurchasesAll
+
+- 
+
+```{r}
+# one variable, continuous x, show distribution
+name = 'PurchasesAll'
+tmp_df <- df %>% rename(value = name) %>% select(value) %>% add_count(value)
+
+p1 <- tmp_df %>%
+  ggplot(aes(x = value)) +
+    geom_spoke(aes(y = -n, radius = 2*n, angle = pi/2, text = paste0("value: ", value, "\ncount: ", n)),
+               alpha = 0.5, stat = "unique") +  # y = 0, radius = n for one-sided spoke plot
+    stat_density(aes(y =..scaled.. * max(tmp_df$n) * 1.5), geom = 'line', position = 'identity') +
+    theme_minimal()  
+p1 <- ggplotly(p1, tooltip = 'text') %>% layout()
+
+p2 <- tmp_df %>%
+  ggplot(aes(x = 1, y = value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +
+    ggtitle(paste("distribution of", name, sep=" ")) 
+p2 <- ggplotly(p2) %>% layout(yaxis = list(showticklabels = FALSE, showgrid = FALSE))
+
+# https://plotly.com/r/subplots/
+fig <- subplot(p1, p2, nrows = 2, margin = 0, heights = c(0.8, 0.2), shareX = TRUE) %>% 
+  layout(xaxis = list(title = name))
+
+fig
+```
+
+
+
+
+
+
+
+
+
+
